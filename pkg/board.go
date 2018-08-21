@@ -151,6 +151,7 @@ func BoardFromPattern(pattern []string) (*Board, error) {
 }
 
 func (b *Board) ToPattern() []string {
+	// @TODO: considering the board size is constant we could just have a const string to copy for this instead of building the blank state everytime
 	pattern := make([][]byte, ROWS)
 	for y, _ := range pattern {
 		pattern[y] = make([]byte, COLS)
@@ -177,11 +178,48 @@ func (b *Board) ToPattern() []string {
 }
 
 type Spaceship struct {
-	coords []int8
+	coords []Coord
 }
 
 func SpaceshipFromPattern(pattern []string) (*Spaceship, error) {
+	// sanity check the input
+	if len(pattern) > ROWS {
+		return nil, errors.New("pattern too many rows")
+	}
+
+	// sanity check the input
+	for _, row := range pattern {
+		if len(row) > COLS {
+			return nil, errors.New("pattern too many cols")
+		}
+
+		// @TODO: is there a nicer way to do this with a builtin?
+		for _, char := range []byte(row) {
+			if char != byte(CoordBlank) && char != byte(CoordShip) {
+				return nil, errors.New("pattern incorrect symbol for coord")
+			}
+		}
+	}
+
 	spaceship := &Spaceship{}
+
+	// parse the input
+	for y, row := range pattern {
+		for x, char := range []byte(row) {
+			coordState := CoordState(char)
+
+			switch coordState {
+			case CoordBlank:
+				// - nothing to do
+			case CoordShip:
+				spaceship.coords = append(spaceship.coords, Coord{x: int8(x), y: int8(y)})
+			}
+		}
+	}
+
+	if len(spaceship.coords) == 0 {
+		return nil, errors.New("blank spaceship")
+	}
 
 	return spaceship, nil
 }
