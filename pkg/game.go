@@ -1,16 +1,29 @@
 package pkg
 
 import (
+	"errors"
 	"math/rand"
 )
-
-type GameStatus int8
 
 func init() {
 	// this should be replaced by crypto/rand with proper seeding for secure random numbers
 	//  but for this exercise it's much nicer if it's not really random
 	rand.Seed(1)
 }
+
+const ROWS = 16
+const COLS = 16
+
+type CoordState byte
+
+const (
+	CoordBlank CoordState = '.'
+	CoordShip  CoordState = '*'
+	CoordHit   CoordState = 'X'
+	CoordMiss  CoordState = '-'
+)
+
+type GameStatus int8
 
 const (
 	GameStatusInitializing GameStatus = 0
@@ -64,7 +77,27 @@ type Board struct {
 	misses     []int8
 }
 
-func BoardFromPattern(pattern string) (*Board, error) {
+func BoardFromPattern(pattern []string) (*Board, error) {
+	// sanity check the input
+	if len(pattern) != ROWS {
+		return nil, errors.New("pattern incorrect amount of rows")
+	}
+
+	// sanity check the input
+	for _, row := range pattern {
+		if len(row) != COLS {
+			return nil, errors.New("pattern incorrect amount of cols")
+		}
+
+		// @TODO: is there a nicer way to do this with a builtin?
+		for _, char := range []byte(row) {
+			// attempt to cast the byte to type
+			if char != byte(CoordBlank) && char != byte(CoordShip) && char != byte(CoordHit) && char != byte(CoordMiss) {
+				return nil, errors.New("pattern incorrect symbol for coord")
+			}
+		}
+	}
+
 	board := &Board{}
 
 	return board, nil
@@ -74,7 +107,7 @@ type Spaceship struct {
 	coords []int8
 }
 
-func SpaceshipFromPattern(pattern string) (*Spaceship, error) {
+func SpaceshipFromPattern(pattern []string) (*Spaceship, error) {
 	spaceship := &Spaceship{}
 
 	return spaceship, nil
