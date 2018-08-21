@@ -290,3 +290,35 @@ func TestBoardFromPatternMixed(t *testing.T) {
 	assert.Equal(8, len(board.misses))
 	assert.Equal(0, len(board.spaceships))
 }
+
+func TestBoardToPattern(t *testing.T) {
+	assert := require.New(t)
+
+	pattern := []string{
+		"X...............",
+		".-..............",
+		"..X.............",
+		"...-............",
+		"....X...........",
+		".....-..........",
+		"......X.........",
+		".......-........",
+		"........X.......",
+		".........-......",
+		"..........X.....",
+		"...........-....",
+		"............X...",
+		".............-..",
+		"..............X.",
+		"...............-",
+	}
+
+	board, err := BoardFromPattern(pattern)
+	assert.NoError(err)
+	assert.NotNil(board)
+	assert.Equal(8, len(board.hits))
+	assert.Equal(8, len(board.misses))
+	assert.Equal(0, len(board.spaceships))
+
+	assert.Equal(pattern, board.ToPattern())
+}

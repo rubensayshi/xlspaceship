@@ -37,6 +37,11 @@ const (
 	CoordShip  CoordState = '*'
 	CoordHit   CoordState = 'X'
 	CoordMiss  CoordState = '-'
+
+	CoordBlankStr string = "."
+	CoordBShipStr string = "*"
+	CoordHitStr   string = "X"
+	CoordMissStr  string = "-"
 )
 
 type Coord struct {
@@ -143,6 +148,32 @@ func BoardFromPattern(pattern []string) (*Board, error) {
 	}
 
 	return board, nil
+}
+
+func (b *Board) ToPattern() []string {
+	pattern := make([][]byte, ROWS)
+	for y, _ := range pattern {
+		pattern[y] = make([]byte, COLS)
+
+		for x := 0; x < COLS; x++ {
+			pattern[y][x] = byte(CoordBlank)
+		}
+	}
+
+	for _, hit := range b.hits {
+		pattern[hit.y][hit.x] = byte(CoordHit)
+	}
+
+	for _, miss := range b.misses {
+		pattern[miss.y][miss.x] = byte(CoordMiss)
+	}
+
+	res := make([]string, ROWS)
+	for y, row := range pattern {
+		res[y] = string(row)
+	}
+
+	return res
 }
 
 type Spaceship struct {
