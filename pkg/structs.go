@@ -38,3 +38,32 @@ func NewGameResponseFromGame(s *XLSpaceship, game *Game) *NewGameResponse {
 
 	return res
 }
+
+type GameStatusResponse struct {
+	Self     GameStatusResponsePlayer `json:"self"`
+	Opponent GameStatusResponsePlayer `json:"opponent"`
+	Game     GameStatusResponseGame   `json:"game"`
+}
+
+type GameStatusResponsePlayer struct {
+	UserID string   `json:"user_id"`
+	Board  []string `json:"board"`
+}
+
+type GameStatusResponseGame struct {
+	PlayerTurn string `json:"player_turn"`
+}
+
+func GameStatusResponseFromGame(s *XLSpaceship, game *Game) *GameStatusResponse {
+	res := &GameStatusResponse{}
+
+	res.Self = GameStatusResponsePlayer{
+		Board: game.SelfBoard.ToPattern(),
+	}
+
+	res.Opponent = GameStatusResponsePlayer{
+		Board: game.OpponentBoard.ToPattern(),
+	}
+
+	return res
+}

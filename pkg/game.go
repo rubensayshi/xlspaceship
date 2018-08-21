@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"fmt"
 	"math/rand"
 )
 
@@ -36,9 +37,16 @@ type Game struct {
 	PlayerWon        Player
 }
 
-func NewGame(opponentPlayerID string) *Game {
-	selfBoard := &Board{}
-	opponentBoard := &Board{}
+func NewGame(opponentPlayerID string) (*Game, error) {
+	selfBoard, err := NewRandomBoard()
+	if err != nil {
+		return nil, err
+	}
+
+	opponentBoard, err := BoardFromPattern(BlankBoardPattern())
+	if err != nil {
+		return nil, err
+	}
 
 	firstPlayer := RandomFirstPlayer()
 
@@ -55,5 +63,13 @@ func NewGame(opponentPlayerID string) *Game {
 	// start the game
 	game.Status = GameStatusOnGoing
 
-	return game
+	return game, nil
+}
+
+func (g *Game) String() string {
+	return fmt.Sprintf(
+		"opponent: %s\n"+
+			"self-board: \n%s\n"+
+			"opponent-board: \n%s\n",
+		g.OpponentPlayerID, g.SelfBoard, g.OpponentBoard)
 }

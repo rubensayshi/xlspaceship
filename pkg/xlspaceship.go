@@ -9,29 +9,33 @@ import (
 type XLSpaceship struct {
 	PlayerID   string
 	PlayerName string
-	games      []*Game
+	games      map[string]*Game
 }
 
 func NewXLSpaceship() *XLSpaceship {
 	s := &XLSpaceship{
 		PlayerID:   "roobs-1",
 		PlayerName: "Roobs",
+		games:      make(map[string]*Game),
 	}
 
 	return s
 }
 
-func (s *XLSpaceship) NewGame(opponentPlayerID string, opponentName string, opponentHost string, opponentPort int) *Game {
+func (s *XLSpaceship) NewGame(opponentPlayerID string, opponentName string, opponentHost string, opponentPort int) (*Game, error) {
 	// @TODO: handle this nicely?
 	if !PingOpponent(opponentHost, opponentPort) {
 		fmt.Printf("failed to ping opponent \n")
 	}
 
-	game := NewGame(opponentPlayerID)
+	game, err := NewGame(opponentPlayerID)
+	if err != nil {
+		return nil, err
+	}
 
-	s.games = append(s.games, game)
+	s.games[game.GameID] = game
 
-	return game
+	return game, nil
 }
 
 func PingOpponent(opponentHost string, opponentPort int) bool {
