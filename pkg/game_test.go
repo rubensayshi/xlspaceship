@@ -234,3 +234,59 @@ func TestBoardFromPatternHits(t *testing.T) {
 	assert.Equal(0, len(board.misses))
 	assert.Equal(0, len(board.spaceships))
 }
+
+func TestBoardFromPatternMisses(t *testing.T) {
+	assert := require.New(t)
+
+	board, err := BoardFromPattern([]string{
+		"-...............",
+		".-..............",
+		"..-.............",
+		"...-............",
+		"....-...........",
+		".....-..........",
+		"......-.........",
+		".......-........",
+		"........-.......",
+		".........-......",
+		"..........-.....",
+		"...........-....",
+		"............-...",
+		".............-..",
+		"..............-.",
+		"...............-",
+	})
+	assert.NoError(err)
+	assert.NotNil(board)
+	assert.Equal(0, len(board.hits))
+	assert.Equal(16, len(board.misses))
+	assert.Equal(0, len(board.spaceships))
+}
+
+func TestBoardFromPatternMixed(t *testing.T) {
+	assert := require.New(t)
+
+	board, err := BoardFromPattern([]string{
+		"X...............",
+		".-..............",
+		"..X.............",
+		"...-............",
+		"....X...........",
+		".....-..........",
+		"......X.........",
+		".......-........",
+		"........X.......",
+		".........-......",
+		"..........X.....",
+		"...........-....",
+		"............X...",
+		".............-..",
+		"..............X.",
+		"...............-",
+	})
+	assert.NoError(err)
+	assert.NotNil(board)
+	assert.Equal(8, len(board.hits))
+	assert.Equal(8, len(board.misses))
+	assert.Equal(0, len(board.spaceships))
+}

@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"errors"
+	"fmt"
 	"math/rand"
 )
 
@@ -16,12 +17,36 @@ const COLS = 16
 
 type CoordState byte
 
+func (c CoordState) String() string {
+	switch c {
+	case CoordBlank:
+		return "."
+	case CoordShip:
+		return "*"
+	case CoordHit:
+		return "X"
+	case CoordMiss:
+		return "-"
+	}
+
+	panic("Unreachable")
+}
+
 const (
 	CoordBlank CoordState = '.'
 	CoordShip  CoordState = '*'
 	CoordHit   CoordState = 'X'
 	CoordMiss  CoordState = '-'
 )
+
+type Coord struct {
+	x int8
+	y int8
+}
+
+func (c Coord) String() string {
+	return fmt.Sprintf("%Xx%X", c.x, c.y)
+}
 
 type GameStatus int8
 
@@ -73,8 +98,8 @@ func NewGame(opponentPlayerID string) *Game {
 
 type Board struct {
 	spaceships []*Spaceship
-	hits       []int8
-	misses     []int8
+	hits       []Coord
+	misses     []Coord
 }
 
 func BoardFromPattern(pattern []string) (*Board, error) {
@@ -91,7 +116,6 @@ func BoardFromPattern(pattern []string) (*Board, error) {
 
 		// @TODO: is there a nicer way to do this with a builtin?
 		for _, char := range []byte(row) {
-			// attempt to cast the byte to type
 			if char != byte(CoordBlank) && char != byte(CoordShip) && char != byte(CoordHit) && char != byte(CoordMiss) {
 				return nil, errors.New("pattern incorrect symbol for coord")
 			}
@@ -99,6 +123,24 @@ func BoardFromPattern(pattern []string) (*Board, error) {
 	}
 
 	board := &Board{}
+
+	// parse the input
+	for y, row := range pattern {
+		for x, char := range []byte(row) {
+			coordState := CoordState(char)
+
+			switch coordState {
+			case CoordBlank:
+				// - nothing to do
+			case CoordShip:
+				// @TODO: not implemented
+			case CoordHit:
+				board.hits = append(board.hits, Coord{x: int8(x), y: int8(y)})
+			case CoordMiss:
+				board.misses = append(board.misses, Coord{x: int8(x), y: int8(y)})
+			}
+		}
+	}
 
 	return board, nil
 }
