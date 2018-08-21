@@ -80,3 +80,15 @@ type ReceiveSalvoResponse struct {
 type ReceiveSalvoResponseGame struct {
 	PlayerTurn string `json:"player_turn"`
 }
+
+func ReceiveSalvoResponseFromSalvoResult(salvoResult []*ShotResult, game *Game) *ReceiveSalvoResponse {
+	res := &ReceiveSalvoResponse{
+		Salvo: make(map[string]string, len(salvoResult)),
+	}
+
+	for _, shotResult := range salvoResult {
+		res.Salvo[shotResult.Coords.String()] = shotResult.ShotStatus.String()
+	}
+
+	return res
+}

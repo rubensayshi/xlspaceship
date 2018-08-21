@@ -49,6 +49,7 @@ func NewGame(opponentPlayerID string) (*Game, error) {
 	}
 
 	firstPlayer := RandomFirstPlayer()
+	firstPlayer = PlayerOpponent // @TODO: for debugging
 
 	game := &Game{
 		GameID:           RandomGameID(),

@@ -13,6 +13,7 @@ func Serve(s *XLSpaceship) {
 	AddPingHandler(s, mux)
 	AddNewGameHandler(s, mux)
 	AddGameStatusHandler(s, mux)
+	AddReceiveSalvoHandler(s, mux)
 
 	if err := http.ListenAndServe(fmt.Sprintf(":%s", DEFAULT_PORT), mux); err != nil {
 		panic(err)
@@ -32,12 +33,14 @@ func AddNewGameHandler(s *XLSpaceship, mux *http.ServeMux) {
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("Bad JSON"))
 			return
 		}
 
 		game, err := s.NewGame(req.UserID, req.FullName, req.SpaceshipProtocol.Hostname, req.SpaceshipProtocol.Port)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(fmt.Sprintf("Failed to create game: %s", err)))
 			return
 		}
 
@@ -63,6 +66,7 @@ func AddGameStatusHandler(s *XLSpaceship, mux *http.ServeMux) {
 		uriChunks := strings.Split(r.RequestURI, "/")
 		gameID := uriChunks[len(uriChunks)-1]
 
+		// @TODO: is this possible?
 		if gameID == "game" {
 			w.WriteHeader(http.StatusBadRequest)
 			return
@@ -70,7 +74,8 @@ func AddGameStatusHandler(s *XLSpaceship, mux *http.ServeMux) {
 
 		game, ok := s.games[gameID]
 		if !ok {
-			w.WriteHeader(http.StatusBadRequest)
+			w.WriteHeader(http.StatusNotFound)
+			w.Write([]byte(fmt.Sprintf("Game not found")))
 			return
 		}
 
@@ -96,6 +101,7 @@ func AddReceiveSalvoHandler(s *XLSpaceship, mux *http.ServeMux) {
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("Bad JSON"))
 			return
 		}
 
@@ -111,6 +117,7 @@ func AddReceiveSalvoHandler(s *XLSpaceship, mux *http.ServeMux) {
 		game, ok := s.games[gameID]
 		if !ok {
 			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(fmt.Sprintf("Game not found")))
 			return
 		}
 
@@ -118,24 +125,29 @@ func AddReceiveSalvoHandler(s *XLSpaceship, mux *http.ServeMux) {
 
 		if game.PlayerTurn != PlayerOpponent || game.Status != GameStatusOnGoing {
 			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(fmt.Sprintf("Not your turn or game already done")))
 			return
 		}
 
 		// parse salvo into coords
+		// @TODO: test for what happens when out of bounds
 		salvo := make([]*Coords, len(req.Salvo))
 		for i, coordsStr := range req.Salvo {
 			coords, err := CoordsFromString(coordsStr)
 			if err != nil {
 				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte(fmt.Sprintf("Coords invalid")))
 				return
 			}
 
 			salvo[i] = coords
 		}
 
-		game.SelfBoard.ReceiveSalvo(salvo)
+		salvoRes := game.SelfBoard.ReceiveSalvo(salvo)
 
-		res := GameStatusResponseFromGame(s, game)
+		fmt.Printf("game:\n %s \n", game)
+
+		res := ReceiveSalvoResponseFromSalvoResult(salvoRes, game)
 
 		resJson, err := json.MarshalIndent(res, "", "    ")
 		if err != nil {

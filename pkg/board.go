@@ -70,6 +70,31 @@ const (
 	CoordsMissStr  string = "-"
 )
 
+type ShotStatus uint8
+
+func (c ShotStatus) String() string {
+	switch c {
+	case ShotStatusMiss:
+		return ShotStatusMissStr
+	case ShotStatusHit:
+		return ShotStatusHitStr
+	case ShotStatusKill:
+		return ShotStatusKillStr
+	}
+
+	panic("Unreachable")
+}
+
+const (
+	ShotStatusMiss ShotStatus = 0
+	ShotStatusHit  ShotStatus = 1
+	ShotStatusKill ShotStatus = 2
+
+	ShotStatusMissStr string = "miss"
+	ShotStatusHitStr  string = "hit"
+	ShotStatusKillStr string = "kill"
+)
+
 type Coords struct {
 	x uint8
 	y uint8
@@ -99,13 +124,27 @@ func (c Coords) String() string {
 	return fmt.Sprintf("%Xx%X", c.x, c.y)
 }
 
-type SalvoResult struct {
+type CoordsGroup []*Coords
+
+func (cg CoordsGroup) Contains(coords *Coords) bool {
+	for _, cgCoords := range cg {
+		if cgCoords.x == coords.x && cgCoords.y == coords.y {
+			return true
+		}
+	}
+
+	return false
+}
+
+type ShotResult struct {
+	Coords     *Coords
+	ShotStatus ShotStatus
 }
 
 type Board struct {
 	spaceships []*Spaceship
-	hits       []*Coords
-	misses     []*Coords
+	hits       CoordsGroup
+	misses     CoordsGroup
 }
 
 func NewRandomBoard() (*Board, error) {
@@ -163,8 +202,8 @@ func BoardFromPattern(pattern []string) (*Board, error) {
 
 	board := &Board{
 		spaceships: make([]*Spaceship, 0),
-		hits:       make([]*Coords, 0),
-		misses:     make([]*Coords, 0),
+		hits:       make(CoordsGroup, 0),
+		misses:     make(CoordsGroup, 0),
 	}
 
 	// parse the input
@@ -248,7 +287,7 @@ func (b *Board) AddSpaceship(spaceship *Spaceship) error {
 }
 
 func (b *Board) AddSpaceshipOnCoords(spaceship *Spaceship, x uint8, y uint8) error {
-	// @TODO: we should store coords of existing spaceships so this isn't O(N2)
+	// @TODO: we should store coords of existing spaceships so we don't have to loop over them
 	for _, coords := range spaceship.coords {
 		if coords.x+x >= ROWS {
 			return errors.New(fmt.Sprintf("Failed to add spaceship, x overflow (%d + %d = %d)", x, coords.x, coords.x+x))
@@ -258,10 +297,8 @@ func (b *Board) AddSpaceshipOnCoords(spaceship *Spaceship, x uint8, y uint8) err
 		}
 
 		for _, otherSpaceship := range b.spaceships {
-			for _, otherCoord := range otherSpaceship.coords {
-				if coords.x+x == otherCoord.x && coords.y+y == otherCoord.y {
-					return errors.New(fmt.Sprintf("Failed to add spaceship, coords already contains spaceship (%dx%d)", otherCoord.x, otherCoord.y))
-				}
+			if otherSpaceship.coords.Contains(coords) {
+				return errors.New(fmt.Sprintf("Failed to add spaceship, coords already contains spaceship (%dx%d)", coords.x, coords.y))
 			}
 		}
 	}
@@ -278,14 +315,56 @@ func (b *Board) AddSpaceshipOnCoords(spaceship *Spaceship, x uint8, y uint8) err
 	return nil
 }
 
-func (b *Board) ReceiveSalvo(salvo []*Coords) *SalvoResult {
+func (b *Board) ReceiveSalvo(salvo CoordsGroup) []*ShotResult {
+	// @TODO: we need to assert that it's the correct amount of shots
 
-	return nil
+	res := make([]*ShotResult, len(salvo))
+	for i, shot := range salvo {
+		res[i] = b.ApplyShot(shot)
+	}
+
+	return res
+}
+
+func (b *Board) ApplyShot(shot *Coords) *ShotResult {
+	// @TODO: same as with AddSpacehipOnCoords it would be a good optimization to store the coords of the ships so we don't have to loop over them
+	status := ShotStatusMiss
+
+	for _, spaceship := range b.spaceships {
+		// check if it's FRESH hit
+		if spaceship.coords.Contains(shot) && !spaceship.hits.Contains(shot) {
+			status = ShotStatusHit
+
+			// add the coords as a hit
+			spaceship.hits = append(spaceship.hits, shot)
+			b.hits = append(b.hits, shot)
+
+			// if we've hit all the coords then it's a kill
+			if len(spaceship.hits) == len(spaceship.coords) {
+				spaceship.dead = true
+				status = ShotStatusKill
+			}
+
+			// break, can't have more than 1 hit
+			break
+		}
+	}
+
+	if status == ShotStatusMiss {
+		b.misses = append(b.misses, shot)
+	}
+
+	res := &ShotResult{
+		shot,
+		status,
+	}
+
+	return res
 }
 
 type Spaceship struct {
-	coords []*Coords
-	hits   []*Coords
+	coords CoordsGroup
+	hits   CoordsGroup
 	dead   bool
 }
 
@@ -311,7 +390,7 @@ func SpaceshipFromPattern(pattern []string) (*Spaceship, error) {
 	}
 
 	spaceship := &Spaceship{
-		hits: make([]*Coords, 0),
+		hits: make(CoordsGroup, 0),
 		dead: false,
 	}
 
