@@ -67,3 +67,16 @@ func GameStatusResponseFromGame(s *XLSpaceship, game *Game) *GameStatusResponse 
 
 	return res
 }
+
+type ReceiveSalvoRequest struct {
+	Salvo []string `json:"salvo"`
+}
+
+type ReceiveSalvoResponse struct {
+	Salvo map[string]string `json:"salvo"`
+	Game  string            `json:"game"`
+}
+
+type ReceiveSalvoResponseGame struct {
+	PlayerTurn string `json:"player_turn"`
+}

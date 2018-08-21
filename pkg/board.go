@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -15,6 +17,8 @@ func init() {
 
 const ROWS = 16
 const COLS = 16
+
+var coordsRegex = regexp.MustCompile(`^([0-9a-fA-F])x([0-9a-fA-F])$`)
 
 func BlankBoardPattern() []string {
 	return []string{
@@ -37,48 +41,71 @@ func BlankBoardPattern() []string {
 	}
 }
 
-type CoordState byte
+type CoordsState byte
 
-func (c CoordState) String() string {
+func (c CoordsState) String() string {
 	switch c {
-	case CoordBlank:
-		return CoordBlankStr
-	case CoordShip:
-		return CoordShipStr
-	case CoordHit:
-		return CoordHitStr
-	case CoordMiss:
-		return CoordMissStr
+	case CoordsBlank:
+		return CoordsBlankStr
+	case CoordsShip:
+		return CoordsShipStr
+	case CoordsHit:
+		return CoordsHitStr
+	case CoordsMiss:
+		return CoordsMissStr
 	}
 
 	panic("Unreachable")
 }
 
 const (
-	CoordBlank CoordState = '.'
-	CoordShip  CoordState = '*'
-	CoordHit   CoordState = 'X'
-	CoordMiss  CoordState = '-'
+	CoordsBlank CoordsState = '.'
+	CoordsShip  CoordsState = '*'
+	CoordsHit   CoordsState = 'X'
+	CoordsMiss  CoordsState = '-'
 
-	CoordBlankStr string = "."
-	CoordShipStr  string = "*"
-	CoordHitStr   string = "X"
-	CoordMissStr  string = "-"
+	CoordsBlankStr string = "."
+	CoordsShipStr  string = "*"
+	CoordsHitStr   string = "X"
+	CoordsMissStr  string = "-"
 )
 
-type Coord struct {
+type Coords struct {
 	x uint8
 	y uint8
 }
 
-func (c Coord) String() string {
+func CoordsFromString(coordsStr string) (*Coords, error) {
+	matches := coordsRegex.FindStringSubmatch(coordsStr)
+	if len(matches) != 3 {
+		return nil, errors.New(fmt.Sprintf("Failed to parse Coords [%s]", coordsStr))
+	}
+
+	x, err := strconv.ParseInt(matches[1], 16, 8)
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("Failed to parse Coords [%s]", coordsStr))
+	}
+	y, err := strconv.ParseInt(matches[2], 16, 8)
+	if err != nil {
+		return nil, errors.New(fmt.Sprintf("Failed to parse Coords [%s]", coordsStr))
+	}
+
+	coords := &Coords{x: uint8(x), y: uint8(y)}
+
+	return coords, nil
+}
+
+func (c Coords) String() string {
 	return fmt.Sprintf("%Xx%X", c.x, c.y)
+}
+
+type SalvoResult struct {
 }
 
 type Board struct {
 	spaceships []*Spaceship
-	hits       []*Coord
-	misses     []*Coord
+	hits       []*Coords
+	misses     []*Coords
 }
 
 func NewRandomBoard() (*Board, error) {
@@ -128,32 +155,32 @@ func BoardFromPattern(pattern []string) (*Board, error) {
 
 		// @TODO: is there a nicer way to do this with a builtin?
 		for _, char := range []byte(row) {
-			if char != byte(CoordBlank) && char != byte(CoordShip) && char != byte(CoordHit) && char != byte(CoordMiss) {
-				return nil, errors.New("pattern incorrect symbol for coord")
+			if char != byte(CoordsBlank) && char != byte(CoordsShip) && char != byte(CoordsHit) && char != byte(CoordsMiss) {
+				return nil, errors.New("pattern incorrect symbol for coords")
 			}
 		}
 	}
 
 	board := &Board{
 		spaceships: make([]*Spaceship, 0),
-		hits:       make([]*Coord, 0),
-		misses:     make([]*Coord, 0),
+		hits:       make([]*Coords, 0),
+		misses:     make([]*Coords, 0),
 	}
 
 	// parse the input
 	for y, row := range pattern {
 		for x, char := range []byte(row) {
-			coordState := CoordState(char)
+			coordsState := CoordsState(char)
 
-			switch coordState {
-			case CoordBlank:
+			switch coordsState {
+			case CoordsBlank:
 				// - nothing to do
-			case CoordShip:
+			case CoordsShip:
 				// @TODO: not implemented
-			case CoordHit:
-				board.hits = append(board.hits, &Coord{x: uint8(x), y: uint8(y)})
-			case CoordMiss:
-				board.misses = append(board.misses, &Coord{x: uint8(x), y: uint8(y)})
+			case CoordsHit:
+				board.hits = append(board.hits, &Coords{x: uint8(x), y: uint8(y)})
+			case CoordsMiss:
+				board.misses = append(board.misses, &Coords{x: uint8(x), y: uint8(y)})
 			}
 		}
 	}
@@ -172,25 +199,25 @@ func (b *Board) ToPattern() []string {
 		pattern[y] = make([]byte, COLS)
 
 		for x := 0; x < COLS; x++ {
-			pattern[y][x] = byte(CoordBlank)
+			pattern[y][x] = byte(CoordsBlank)
 		}
 	}
 
 	// add spaceships to the pattern
 	for _, spaceship := range b.spaceships {
-		for _, coord := range spaceship.coords {
-			pattern[coord.y][coord.x] = byte(CoordShip)
+		for _, coords := range spaceship.coords {
+			pattern[coords.y][coords.x] = byte(CoordsShip)
 		}
 	}
 
 	// add hits to the pattern (will overwrite spaceship coords)
 	for _, hit := range b.hits {
-		pattern[hit.y][hit.x] = byte(CoordHit)
+		pattern[hit.y][hit.x] = byte(CoordsHit)
 	}
 
 	// add misses to the pattern
 	for _, miss := range b.misses {
-		pattern[miss.y][miss.x] = byte(CoordMiss)
+		pattern[miss.y][miss.x] = byte(CoordsMiss)
 	}
 
 	// turn the byte arrays into strings
@@ -222,27 +249,27 @@ func (b *Board) AddSpaceship(spaceship *Spaceship) error {
 
 func (b *Board) AddSpaceshipOnCoords(spaceship *Spaceship, x uint8, y uint8) error {
 	// @TODO: we should store coords of existing spaceships so this isn't O(N2)
-	for _, coord := range spaceship.coords {
-		if coord.x+x >= ROWS {
-			return errors.New(fmt.Sprintf("Failed to add spaceship, x overflow (%d + %d = %d)", x, coord.x, coord.x+x))
+	for _, coords := range spaceship.coords {
+		if coords.x+x >= ROWS {
+			return errors.New(fmt.Sprintf("Failed to add spaceship, x overflow (%d + %d = %d)", x, coords.x, coords.x+x))
 		}
-		if coord.y+y >= COLS {
-			return errors.New(fmt.Sprintf("Failed to add spaceship, y overflow (%d + %d = %d)", y, coord.y, coord.y+y))
+		if coords.y+y >= COLS {
+			return errors.New(fmt.Sprintf("Failed to add spaceship, y overflow (%d + %d = %d)", y, coords.y, coords.y+y))
 		}
 
 		for _, otherSpaceship := range b.spaceships {
 			for _, otherCoord := range otherSpaceship.coords {
-				if coord.x+x == otherCoord.x && coord.y+y == otherCoord.y {
-					return errors.New(fmt.Sprintf("Failed to add spaceship, coord already contains spaceship (%dx%d)", otherCoord.x, otherCoord.y))
+				if coords.x+x == otherCoord.x && coords.y+y == otherCoord.y {
+					return errors.New(fmt.Sprintf("Failed to add spaceship, coords already contains spaceship (%dx%d)", otherCoord.x, otherCoord.y))
 				}
 			}
 		}
 	}
 
 	// offset the spaceship coords with the coords it's placed on
-	for _, coord := range spaceship.coords {
-		coord.x += x
-		coord.y += y
+	for _, coords := range spaceship.coords {
+		coords.x += x
+		coords.y += y
 	}
 
 	// add spaceship to board
@@ -251,9 +278,14 @@ func (b *Board) AddSpaceshipOnCoords(spaceship *Spaceship, x uint8, y uint8) err
 	return nil
 }
 
+func (b *Board) ReceiveSalvo(salvo []*Coords) *SalvoResult {
+
+	return nil
+}
+
 type Spaceship struct {
-	coords []*Coord
-	hits   []*Coord
+	coords []*Coords
+	hits   []*Coords
 	dead   bool
 }
 
@@ -272,27 +304,27 @@ func SpaceshipFromPattern(pattern []string) (*Spaceship, error) {
 
 		// @TODO: is there a nicer way to do this with a builtin?
 		for _, char := range []byte(row) {
-			if char != byte(CoordBlank) && char != byte(CoordShip) {
-				return nil, errors.New("pattern incorrect symbol for coord")
+			if char != byte(CoordsBlank) && char != byte(CoordsShip) {
+				return nil, errors.New("pattern incorrect symbol for coords")
 			}
 		}
 	}
 
 	spaceship := &Spaceship{
-		hits: make([]*Coord, 0),
+		hits: make([]*Coords, 0),
 		dead: false,
 	}
 
 	// parse the input
 	for y, row := range pattern {
 		for x, char := range []byte(row) {
-			coordState := CoordState(char)
+			coordsState := CoordsState(char)
 
-			switch coordState {
-			case CoordBlank:
+			switch coordsState {
+			case CoordsBlank:
 				// - nothing to do
-			case CoordShip:
-				spaceship.coords = append(spaceship.coords, &Coord{x: uint8(x), y: uint8(y)})
+			case CoordsShip:
+				spaceship.coords = append(spaceship.coords, &Coords{x: uint8(x), y: uint8(y)})
 			}
 		}
 	}
