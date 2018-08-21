@@ -20,13 +20,13 @@ type CoordState byte
 func (c CoordState) String() string {
 	switch c {
 	case CoordBlank:
-		return "."
+		return CoordBlankStr
 	case CoordShip:
-		return "*"
+		return CoordShipStr
 	case CoordHit:
-		return "X"
+		return CoordHitStr
 	case CoordMiss:
-		return "-"
+		return CoordMissStr
 	}
 
 	panic("Unreachable")
@@ -39,72 +39,24 @@ const (
 	CoordMiss  CoordState = '-'
 
 	CoordBlankStr string = "."
-	CoordBShipStr string = "*"
+	CoordShipStr  string = "*"
 	CoordHitStr   string = "X"
 	CoordMissStr  string = "-"
 )
 
 type Coord struct {
-	x int8
-	y int8
+	x uint8
+	y uint8
 }
 
 func (c Coord) String() string {
 	return fmt.Sprintf("%Xx%X", c.x, c.y)
 }
 
-type GameStatus int8
-
-const (
-	GameStatusInitializing GameStatus = 0
-	GameStatusOnGoing      GameStatus = 1
-	GameStatusDone         GameStatus = 2
-)
-
-type Player int8
-
-const (
-	PlayerNone     Player = 0
-	PlayerSelf     Player = 1
-	PlayerOpponent Player = 2
-)
-
-type Game struct {
-	GameID           string
-	OpponentPlayerID string
-	Status           GameStatus
-	SelfBoard        *Board
-	OpponentBoard    *Board
-	PlayerTurn       Player
-	PlayerWon        Player
-}
-
-func NewGame(opponentPlayerID string) *Game {
-	selfBoard := &Board{}
-	opponentBoard := &Board{}
-
-	firstPlayer := RandomFirstPlayer()
-
-	game := &Game{
-		GameID:           RandomGameID(),
-		OpponentPlayerID: opponentPlayerID,
-		Status:           GameStatusInitializing,
-		SelfBoard:        selfBoard,
-		OpponentBoard:    opponentBoard,
-		PlayerTurn:       firstPlayer,
-		PlayerWon:        PlayerNone,
-	}
-
-	// start the game
-	game.Status = GameStatusOnGoing
-
-	return game
-}
-
 type Board struct {
 	spaceships []*Spaceship
-	hits       []Coord
-	misses     []Coord
+	hits       []*Coord
+	misses     []*Coord
 }
 
 func BoardFromPattern(pattern []string) (*Board, error) {
@@ -127,7 +79,11 @@ func BoardFromPattern(pattern []string) (*Board, error) {
 		}
 	}
 
-	board := &Board{}
+	board := &Board{
+		spaceships: make([]*Spaceship, 0),
+		hits:       make([]*Coord, 0),
+		misses:     make([]*Coord, 0),
+	}
 
 	// parse the input
 	for y, row := range pattern {
@@ -140,9 +96,9 @@ func BoardFromPattern(pattern []string) (*Board, error) {
 			case CoordShip:
 				// @TODO: not implemented
 			case CoordHit:
-				board.hits = append(board.hits, Coord{x: int8(x), y: int8(y)})
+				board.hits = append(board.hits, &Coord{x: uint8(x), y: uint8(y)})
 			case CoordMiss:
-				board.misses = append(board.misses, Coord{x: int8(x), y: int8(y)})
+				board.misses = append(board.misses, &Coord{x: uint8(x), y: uint8(y)})
 			}
 		}
 	}
@@ -177,10 +133,62 @@ func (b *Board) ToPattern() []string {
 	return res
 }
 
-type Spaceship struct {
-	coords []Coord
+func (b *Board) AddSpaceship(spaceship *Spaceship) error {
+	N := 10000
+	// we'll attempt to add the spaceship on random locations until we succeed to reach N
+	// @TODO: this could be heavily optimized as we know we don't have to try adding a spaceship of 3 high on Y > 15 - 3
+	for i := 0; i < N; i++ {
+		x := rand.Intn(COLS)
+		y := rand.Intn(ROWS)
+
+		err := b.AddSpaceshipOnCoords(spaceship, uint8(x), uint8(y))
+		// we're done if no err
+		if err == nil {
+			return nil
+		}
+	}
+
+	return errors.New("Failed to add spaceship, seems impossible")
 }
 
+func (b *Board) AddSpaceshipOnCoords(spaceship *Spaceship, x uint8, y uint8) error {
+	// @TODO: we should store coords of existing spaceships so this isn't O(N2)
+	for _, coord := range spaceship.coords {
+		if coord.x+x >= ROWS {
+			return errors.New(fmt.Sprintf("Failed to add spaceship, x overflow (%d + %d = %d)", x, coord.x, coord.x+x))
+		}
+		if coord.y+y >= COLS {
+			return errors.New(fmt.Sprintf("Failed to add spaceship, y overflow (%d + %d = %d)", y, coord.y, coord.y+y))
+		}
+
+		for _, otherSpaceship := range b.spaceships {
+			for _, otherCoord := range otherSpaceship.coords {
+				if coord.x+x == otherCoord.x && coord.y+y == otherCoord.y {
+					return errors.New(fmt.Sprintf("Failed to add spaceship, coord already contains spaceship (%dx%d)", otherCoord.x, otherCoord.y))
+				}
+			}
+		}
+	}
+
+	// offset the spaceship coords with the coords it's placed on
+	for _, coord := range spaceship.coords {
+		coord.x += x
+		coord.y += y
+	}
+
+	// add spaceship to board
+	b.spaceships = append(b.spaceships, spaceship)
+
+	return nil
+}
+
+type Spaceship struct {
+	coords []*Coord
+	hits   []*Coord
+	dead   bool
+}
+
+// @TODO: should sanitize any padding
 func SpaceshipFromPattern(pattern []string) (*Spaceship, error) {
 	// sanity check the input
 	if len(pattern) > ROWS {
@@ -201,7 +209,10 @@ func SpaceshipFromPattern(pattern []string) (*Spaceship, error) {
 		}
 	}
 
-	spaceship := &Spaceship{}
+	spaceship := &Spaceship{
+		hits: make([]*Coord, 0),
+		dead: false,
+	}
 
 	// parse the input
 	for y, row := range pattern {
@@ -212,7 +223,7 @@ func SpaceshipFromPattern(pattern []string) (*Spaceship, error) {
 			case CoordBlank:
 				// - nothing to do
 			case CoordShip:
-				spaceship.coords = append(spaceship.coords, Coord{x: int8(x), y: int8(y)})
+				spaceship.coords = append(spaceship.coords, &Coord{x: uint8(x), y: uint8(y)})
 			}
 		}
 	}
