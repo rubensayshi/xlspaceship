@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"strings"
 )
 
 func init() {
@@ -14,6 +15,27 @@ func init() {
 
 const ROWS = 16
 const COLS = 16
+
+func BlankBoardPattern() []string {
+	return []string{
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+	}
+}
 
 type CoordState byte
 
@@ -104,6 +126,10 @@ func BoardFromPattern(pattern []string) (*Board, error) {
 	}
 
 	return board, nil
+}
+
+func (b *Board) String() string {
+	return fmt.Sprintf("%s", strings.Join(b.ToPattern(), "\n"))
 }
 
 func (b *Board) ToPattern() []string {
