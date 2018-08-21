@@ -57,27 +57,3 @@ func NewGame(opponentPlayerID string) *Game {
 
 	return game
 }
-
-func NewRandomBoard() (*Board, error) {
-	board := &Board{}
-
-	for _, spaceshipPattern := range [][]string{
-		SpaceshipPatternWinger,
-		SpaceshipPatternAngle,
-		SpaceshipPatternAClass,
-		SpaceshipPatternBClass,
-		SpaceshipPatternSClass,
-	} {
-		spaceship, err := SpaceshipFromPattern(spaceshipPattern)
-		if err != nil {
-			return nil, err
-		}
-
-		err = board.AddSpaceship(spaceship)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return board, nil
-}

@@ -81,6 +81,39 @@ type Board struct {
 	misses     []*Coord
 }
 
+func NewRandomBoard() (*Board, error) {
+	// we retry to create a random board 100 times incase the spaceships didn't fit (should never happen with default board size and spaceships)
+	for i := 0; i < 100; i++ {
+		board := &Board{}
+
+		for _, spaceshipPattern := range [][]string{
+			SpaceshipPatternWinger,
+			SpaceshipPatternAngle,
+			SpaceshipPatternAClass,
+			SpaceshipPatternBClass,
+			SpaceshipPatternSClass,
+		} {
+			spaceship, err := SpaceshipFromPattern(spaceshipPattern)
+			if err != nil {
+				return nil, err
+			}
+
+			// attemp to add spaceship, if we fail we nil the board so that we keep trying
+			err = board.AddSpaceship(spaceship)
+			if err != nil {
+				board = nil
+				break
+			}
+		}
+
+		if board != nil {
+			return board, nil
+		}
+	}
+
+	return nil, errors.New("Failed to create a random board")
+}
+
 func BoardFromPattern(pattern []string) (*Board, error) {
 	// sanity check the input
 	if len(pattern) != ROWS {
@@ -143,20 +176,24 @@ func (b *Board) ToPattern() []string {
 		}
 	}
 
+	// add spaceships to the pattern
 	for _, spaceship := range b.spaceships {
 		for _, coord := range spaceship.coords {
 			pattern[coord.y][coord.x] = byte(CoordShip)
 		}
 	}
 
+	// add hits to the pattern (will overwrite spaceship coords)
 	for _, hit := range b.hits {
 		pattern[hit.y][hit.x] = byte(CoordHit)
 	}
 
+	// add misses to the pattern
 	for _, miss := range b.misses {
 		pattern[miss.y][miss.x] = byte(CoordMiss)
 	}
 
+	// turn the byte arrays into strings
 	res := make([]string, ROWS)
 	for y, row := range pattern {
 		res[y] = string(row)
