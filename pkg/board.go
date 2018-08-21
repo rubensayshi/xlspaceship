@@ -117,6 +117,12 @@ func (b *Board) ToPattern() []string {
 		}
 	}
 
+	for _, spaceship := range b.spaceships {
+		for _, coord := range spaceship.coords {
+			pattern[coord.y][coord.x] = byte(CoordShip)
+		}
+	}
+
 	for _, hit := range b.hits {
 		pattern[hit.y][hit.x] = byte(CoordHit)
 	}
