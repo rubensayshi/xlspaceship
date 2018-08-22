@@ -3,20 +3,19 @@ package pkg
 import (
 	"net/http"
 
-	"bytes"
-	"encoding/json"
-	"fmt"
-
 	"math/rand"
 
 	"io"
+
+	"fmt"
 
 	"github.com/pkg/errors"
 )
 
 type XLSpaceship struct {
-	Player *Player
-	games  map[string]*Game
+	Player    *Player
+	games     map[string]*Game
+	requester Requester
 }
 
 func NewXLSpaceship(playerID string, host string, port int) *XLSpaceship {
@@ -27,7 +26,8 @@ func NewXLSpaceship(playerID string, host string, port int) *XLSpaceship {
 			ProtocolHost: host,
 			ProtocolPort: port,
 		},
-		games: make(map[string]*Game),
+		games:     make(map[string]*Game),
+		requester: &HttpRequester{},
 	}
 
 	// make a random seed based on the playerID, that way it's deterministic but different per player
@@ -61,26 +61,15 @@ func (s *XLSpaceship) NewGame(req *NewGameRequest) (*NewGameResponse, error) {
 }
 
 func (s *XLSpaceship) InitNewGame(req *InitGameRequest) (string, error) {
-	newGameReq := NewGameRequest{
+	newGameReq := &NewGameRequest{
 		UserID:            s.Player.PlayerID,
 		FullName:          s.Player.FullName,
-		SpaceshipProtocol: GameRequestSpaceshipProtocol{s.Player.ProtocolHost, s.Player.ProtocolPort},
-	}
-	reqJson, err := json.Marshal(newGameReq)
-	if err != nil {
-		return "", errors.Wrapf(err, "Failed to init game")
+		SpaceshipProtocol: SpaceshipProtocol{s.Player.ProtocolHost, s.Player.ProtocolPort},
 	}
 
-	res, err := http.Post(fmt.Sprintf("http://%s:%d/xl-spaceship/protocol/game/new", req.SpaceshipProtocol.Hostname, req.SpaceshipProtocol.Port), "application/json", bytes.NewBuffer(reqJson))
-	if err != nil || res.StatusCode != http.StatusCreated {
-		return "", errors.Wrapf(err, "Failed to init game")
-	}
-	defer res.Body.Close()
-
-	newGameRes := &NewGameResponse{}
-	err = json.NewDecoder(res.Body).Decode(newGameRes)
+	newGameRes, err := s.requester.NewGame(req.SpaceshipProtocol, newGameReq)
 	if err != nil {
-		return "", errors.Wrapf(err, "Failed to init game")
+		return "", errors.Wrapf(err, "Failed to init new game")
 	}
 
 	firstPlayer := PlayerSelf
@@ -97,7 +86,7 @@ func (s *XLSpaceship) InitNewGame(req *InitGameRequest) (string, error) {
 
 	game, err := InitNewGame(newGameRes.GameID, opponent, firstPlayer)
 	if err != nil {
-		return "", errors.Wrapf(err, "Failed to init game")
+		return "", errors.Wrapf(err, "Failed to init new game")
 	}
 
 	s.games[game.GameID] = game
@@ -117,7 +106,7 @@ func (s *XLSpaceship) GameStatus(gameID string) (*GameStatusResponse, bool) {
 }
 
 func (s *XLSpaceship) FireSalvo(game *Game, salvo CoordsGroup) (*SalvoResponse, error) {
-	req := ReceiveSalvoRequest{
+	req := &ReceiveSalvoRequest{
 		Salvo: make([]string, len(salvo)),
 	}
 
@@ -125,25 +114,18 @@ func (s *XLSpaceship) FireSalvo(game *Game, salvo CoordsGroup) (*SalvoResponse, 
 		req.Salvo[i] = salvo.String()
 	}
 
-	reqJson, err := json.Marshal(req)
+	res, err := s.requester.ReceiveSalvo(SpaceshipProtocol{
+		Hostname: game.Opponent.ProtocolHost,
+		Port:     game.Opponent.ProtocolPort,
+	}, game.GameID, req)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Failed to fire salvo")
 	}
 
-	res, err := Put(fmt.Sprintf("http://%s:%d/xl-spaceship/protocol/game/%s", game.Opponent.ProtocolHost, game.Opponent.ProtocolPort, game.GameID), "application/json", bytes.NewBuffer(reqJson))
-	if err != nil || res.StatusCode != http.StatusOK {
-		return nil, errors.Wrapf(err, "Failed to fire salvo")
-	}
-	defer res.Body.Close()
+	fmt.Printf("%v | %v \n", res, err)
 
-	newGameRes := &SalvoResponse{}
-	err = json.NewDecoder(res.Body).Decode(newGameRes)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Failed to fire salvo: unmarshall response")
-	}
-
-	salvoRes := make([]*ShotResult, 0, len(newGameRes.Salvo))
-	for coordsStr, shotResStr := range newGameRes.Salvo {
+	salvoRes := make([]*ShotResult, 0, len(res.Salvo))
+	for coordsStr, shotResStr := range res.Salvo {
 		coords, err := CoordsFromString(coordsStr)
 		if err != nil {
 			return nil, errors.Wrapf(err, "Failed to fire salvo")

@@ -19,7 +19,7 @@ func init() {
 const ROWS = 16
 const COLS = 16
 
-var coordsRegex = regexp.MustCompile(`^([0-9a-fA-F])x([0-9a-fA-F])$`)
+var coordsRegex = regexp.MustCompile(`^([0-9a-fA-F])[xX]([0-9a-fA-F])$`)
 
 func BlankBoardPattern() []string {
 	return []string{

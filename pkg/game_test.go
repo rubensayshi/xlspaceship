@@ -9,10 +9,14 @@ import (
 func TestNewGame(t *testing.T) {
 	assert := require.New(t)
 
-	game, err := CreateNewGame("player-1")
+	game, err := CreateNewGame(&Player{
+		PlayerID: "player-1",
+		FullName: "Player 1",
+	})
 
 	assert.NoError(err)
-	assert.Equal("player-1", game.OpponentPlayerID)
+	assert.Equal("player-1", game.Opponent.PlayerID)
+	assert.Equal("Player 1", game.Opponent.FullName)
 	assert.Equal(GameStatusOnGoing, game.Status)
 	assert.NotNil(game.SelfBoard)
 	assert.NotNil(game.OpponentBoard)

@@ -5,15 +5,15 @@ const (
 	URI_PREFIX   = "/xl-spaceship"
 )
 
-type GameRequestSpaceshipProtocol struct {
+type SpaceshipProtocol struct {
 	Hostname string `json:"hostname"`
 	Port     int    `json:"port"`
 }
 
 type NewGameRequest struct {
-	UserID            string                       `json:"user_id"`
-	FullName          string                       `json:"full_name"`
-	SpaceshipProtocol GameRequestSpaceshipProtocol `json:"spaceship_protocol"`
+	UserID            string            `json:"user_id"`
+	FullName          string            `json:"full_name"`
+	SpaceshipProtocol SpaceshipProtocol `json:"spaceship_protocol"`
 }
 
 type NewGameResponse struct {
@@ -40,7 +40,7 @@ func NewGameResponseFromGame(s *XLSpaceship, game *Game) *NewGameResponse {
 }
 
 type InitGameRequest struct {
-	SpaceshipProtocol GameRequestSpaceshipProtocol `json:"spaceship_protocol"`
+	SpaceshipProtocol SpaceshipProtocol `json:"spaceship_protocol"`
 }
 
 type GameStatusResponse struct {
