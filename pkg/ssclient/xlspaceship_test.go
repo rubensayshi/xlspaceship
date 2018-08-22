@@ -1,15 +1,16 @@
-package pkg
+package ssclient
 
 import (
 	"testing"
 
+	"github.com/rubensayshi/xlspaceship/pkg/ssgame"
 	"github.com/stretchr/testify/require"
 )
 
 // @TODO: ReceiveSalvo test
 
-func mustCoordsFromString(coordsStr string) *Coords {
-	coords, err := CoordsFromString(coordsStr)
+func mustCoordsFromString(coordsStr string) *ssgame.Coords {
+	coords, err := ssgame.CoordsFromString(coordsStr)
 	if err != nil {
 		panic(err)
 	}
@@ -110,7 +111,7 @@ func TestXLSpaceship_FireSalvo(t *testing.T) {
 		Salvo: []string{"0x0", "1x1"},
 	}).Return(&SalvoResponse{}, nil)
 
-	res, err := xl.FireSalvo(game, CoordsGroup{
+	res, err := xl.FireSalvo(game, ssgame.CoordsGroup{
 		mustCoordsFromString("0x0"),
 		mustCoordsFromString("1x1"),
 	})

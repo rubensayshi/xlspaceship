@@ -1,4 +1,4 @@
-package pkg
+package ssclient
 
 import (
 	"encoding/json"
@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/rubensayshi/xlspaceship/pkg/ssgame"
 )
 
 func Serve(s *XLSpaceship, port int) {
@@ -132,7 +133,7 @@ func AddFireSalvoHandler(s *XLSpaceship, r *mux.Router) {
 
 		// parse salvo into coords
 		// @TODO: test for what happens when out of bounds
-		salvo, err := CoordsGroupFromSalvoStrings(req.Salvo)
+		salvo, err := ssgame.CoordsGroupFromSalvoStrings(req.Salvo)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(fmt.Sprintf("Coords invalid")))
@@ -140,7 +141,7 @@ func AddFireSalvoHandler(s *XLSpaceship, r *mux.Router) {
 		}
 
 		// @TODO
-		if game.Status == GameStatusDone {
+		if game.Status == ssgame.GameStatusDone {
 			panic("done")
 		}
 
@@ -189,7 +190,7 @@ func AddReceiveSalvoHandler(s *XLSpaceship, r *mux.Router) {
 
 		// parse salvo into coords
 		// @TODO: test for what happens when out of bounds
-		salvo, err := CoordsGroupFromSalvoStrings(req.Salvo)
+		salvo, err := ssgame.CoordsGroupFromSalvoStrings(req.Salvo)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(fmt.Sprintf("Coords invalid")))
@@ -197,12 +198,12 @@ func AddReceiveSalvoHandler(s *XLSpaceship, r *mux.Router) {
 		}
 
 		// if the game is already done then we create a mock response with misses
-		if game.Status == GameStatusDone {
-			salvoRes := make([]*ShotResult, len(salvo))
+		if game.Status == ssgame.GameStatusDone {
+			salvoRes := make([]*ssgame.ShotResult, len(salvo))
 			for i, shot := range salvo {
-				salvoRes[i] = &ShotResult{
+				salvoRes[i] = &ssgame.ShotResult{
 					Coords:     shot,
-					ShotStatus: ShotStatusMiss,
+					ShotStatus: ssgame.ShotStatusMiss,
 				}
 			}
 
@@ -221,7 +222,7 @@ func AddReceiveSalvoHandler(s *XLSpaceship, r *mux.Router) {
 		}
 
 		// check if it's the opponent's turn, otherwise he's not allowed to fire
-		if game.PlayerTurn != PlayerOpponent {
+		if game.PlayerTurn != ssgame.PlayerOpponent {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(fmt.Sprintf("Not your turn")))
 			return

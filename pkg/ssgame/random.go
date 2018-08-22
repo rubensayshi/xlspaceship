@@ -1,4 +1,4 @@
-package pkg
+package ssgame
 
 import (
 	"fmt"

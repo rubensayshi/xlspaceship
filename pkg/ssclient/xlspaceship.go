@@ -1,4 +1,4 @@
-package pkg
+package ssclient
 
 import (
 	"net/http"
@@ -8,23 +8,24 @@ import (
 	"io"
 
 	"github.com/pkg/errors"
+	"github.com/rubensayshi/xlspaceship/pkg/ssgame"
 )
 
 type XLSpaceship struct {
-	Player    *Player
-	games     map[string]*Game
+	Player    *ssgame.Player
+	games     map[string]*ssgame.Game
 	requester Requester
 }
 
 func NewXLSpaceship(playerID string, host string, port int) *XLSpaceship {
 	s := &XLSpaceship{
-		Player: &Player{
+		Player: &ssgame.Player{
 			PlayerID:     playerID,
 			FullName:     playerID,
 			ProtocolHost: host,
 			ProtocolPort: port,
 		},
-		games:     make(map[string]*Game),
+		games:     make(map[string]*ssgame.Game),
 		requester: &HttpRequester{},
 	}
 
@@ -40,14 +41,14 @@ func NewXLSpaceship(playerID string, host string, port int) *XLSpaceship {
 }
 
 func (s *XLSpaceship) NewGame(req *NewGameRequest) (*NewGameResponse, error) {
-	opponent := &Player{
+	opponent := &ssgame.Player{
 		PlayerID:     req.UserID,
 		FullName:     req.FullName,
 		ProtocolHost: req.SpaceshipProtocol.Hostname,
 		ProtocolPort: req.SpaceshipProtocol.Port,
 	}
 
-	game, err := CreateNewGame(opponent)
+	game, err := ssgame.CreateNewGame(opponent)
 	if err != nil {
 		return nil, err
 	}
@@ -70,19 +71,19 @@ func (s *XLSpaceship) InitNewGame(req *InitGameRequest) (string, error) {
 		return "", errors.Wrapf(err, "Failed to init new game")
 	}
 
-	firstPlayer := PlayerSelf
+	firstPlayer := ssgame.PlayerSelf
 	if newGameRes.Starting != s.Player.PlayerID {
-		firstPlayer = PlayerOpponent
+		firstPlayer = ssgame.PlayerOpponent
 	}
 
-	opponent := &Player{
+	opponent := &ssgame.Player{
 		PlayerID:     newGameRes.UserID,
 		FullName:     newGameRes.FullName,
 		ProtocolHost: req.SpaceshipProtocol.Hostname,
 		ProtocolPort: req.SpaceshipProtocol.Port,
 	}
 
-	game, err := InitNewGame(newGameRes.GameID, opponent, firstPlayer)
+	game, err := ssgame.InitNewGame(newGameRes.GameID, opponent, firstPlayer)
 	if err != nil {
 		return "", errors.Wrapf(err, "Failed to init new game")
 	}
@@ -103,7 +104,7 @@ func (s *XLSpaceship) GameStatus(gameID string) (*GameStatusResponse, bool) {
 	return res, true
 }
 
-func (s *XLSpaceship) FireSalvo(game *Game, salvo CoordsGroup) (*SalvoResponse, error) {
+func (s *XLSpaceship) FireSalvo(game *ssgame.Game, salvo ssgame.CoordsGroup) (*SalvoResponse, error) {
 	req := &ReceiveSalvoRequest{
 		Salvo: make([]string, len(salvo)),
 	}
@@ -120,28 +121,28 @@ func (s *XLSpaceship) FireSalvo(game *Game, salvo CoordsGroup) (*SalvoResponse, 
 		return nil, errors.Wrapf(err, "Failed to fire salvo")
 	}
 
-	salvoRes := make([]*ShotResult, 0, len(res.Salvo))
+	salvoRes := make([]*ssgame.ShotResult, 0, len(res.Salvo))
 	for coordsStr, shotResStr := range res.Salvo {
-		coords, err := CoordsFromString(coordsStr)
+		coords, err := ssgame.CoordsFromString(coordsStr)
 		if err != nil {
 			return nil, errors.Wrapf(err, "Failed to fire salvo")
 		}
 
-		shotStatus, err := ShotStatusFromString(shotResStr)
+		shotStatus, err := ssgame.ShotStatusFromString(shotResStr)
 		if err != nil {
 			return nil, errors.Wrapf(err, "Failed to fire salvo")
 		}
 
-		salvoRes = append(salvoRes, &ShotResult{coords, shotStatus})
+		salvoRes = append(salvoRes, &ssgame.ShotResult{coords, shotStatus})
 	}
 
-	game.PlayerTurn = PlayerOpponent
+	game.PlayerTurn = ssgame.PlayerOpponent
 
 	// @TODO
 	win := false
 	if win {
-		game.Status = GameStatusDone
-		game.PlayerWon = PlayerOpponent
+		game.Status = ssgame.GameStatusDone
+		game.PlayerWon = ssgame.PlayerOpponent
 	}
 
 	// @TODO: mark result on our end
@@ -149,23 +150,15 @@ func (s *XLSpaceship) FireSalvo(game *Game, salvo CoordsGroup) (*SalvoResponse, 
 	return ReceiveSalvoResponseFromSalvoResult(salvoRes, s, game), nil
 }
 
-func (s *XLSpaceship) ReceiveSalvo(game *Game, salvo CoordsGroup) (*SalvoResponse, error) {
+func (s *XLSpaceship) ReceiveSalvo(game *ssgame.Game, salvo ssgame.CoordsGroup) (*SalvoResponse, error) {
 	// @TODO: we need to assert that the amount of shots in the salvo match the rules (5 shots)
 
 	salvoRes := game.SelfBoard.ReceiveSalvo(salvo)
-	game.PlayerTurn = PlayerSelf
+	game.PlayerTurn = ssgame.PlayerSelf
 
-	rip := true
-	for _, spaceship := range game.SelfBoard.spaceships {
-		if !spaceship.dead {
-			rip = false
-			break
-		}
-	}
-
-	if rip {
-		game.Status = GameStatusDone
-		game.PlayerWon = PlayerOpponent
+	if game.SelfBoard.AllShipsDead() {
+		game.Status = ssgame.GameStatusDone
+		game.PlayerWon = ssgame.PlayerOpponent
 	}
 
 	return ReceiveSalvoResponseFromSalvoResult(salvoRes, s, game), nil

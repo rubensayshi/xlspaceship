@@ -1,4 +1,4 @@
-package pkg
+package ssclient
 
 import (
 	"github.com/stretchr/testify/mock"

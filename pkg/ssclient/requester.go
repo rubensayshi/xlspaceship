@@ -1,12 +1,10 @@
-package pkg
+package ssclient
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
-
-	"io/ioutil"
 
 	"github.com/pkg/errors"
 )
@@ -44,13 +42,11 @@ func (r *HttpRequester) NewGame(dest SpaceshipProtocol, req *NewGameRequest) (*N
 }
 
 func (r *HttpRequester) ReceiveSalvo(dest SpaceshipProtocol, gameID string, req *ReceiveSalvoRequest) (*SalvoResponse, error) {
-	fmt.Printf("1")
 	reqJson, err := json.Marshal(req)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Failed to request receive salvo")
 	}
 
-	fmt.Printf("2")
 	res, err := Put(fmt.Sprintf("http://%s:%d/xl-spaceship/protocol/game/%s", dest.Hostname, dest.Port, gameID), "application/json", bytes.NewBuffer(reqJson))
 	if err != nil {
 		return nil, errors.Wrapf(err, "Failed to request receive salvo")
@@ -58,12 +54,7 @@ func (r *HttpRequester) ReceiveSalvo(dest SpaceshipProtocol, gameID string, req 
 	if res.StatusCode != http.StatusOK {
 		return nil, errors.Errorf("Failed to request receive salvo (http: %d)", res.StatusCode)
 	}
-	fmt.Printf("3")
 	defer res.Body.Close()
-
-	fmt.Printf("4")
-	dbg, _ := ioutil.ReadAll(res.Body)
-	fmt.Printf("DBG: %s \n", dbg)
 
 	salvoResponse := &SalvoResponse{}
 	err = json.NewDecoder(res.Body).Decode(salvoResponse)

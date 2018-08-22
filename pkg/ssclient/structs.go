@@ -1,4 +1,6 @@
-package pkg
+package ssclient
+
+import "github.com/rubensayshi/xlspaceship/pkg/ssgame"
 
 const (
 	DEFAULT_PORT = "3001"
@@ -23,14 +25,14 @@ type NewGameResponse struct {
 	Starting string `json:"starting"`
 }
 
-func NewGameResponseFromGame(s *XLSpaceship, game *Game) *NewGameResponse {
+func NewGameResponseFromGame(s *XLSpaceship, game *ssgame.Game) *NewGameResponse {
 	res := &NewGameResponse{}
 
 	res.UserID = s.Player.PlayerID
 	res.FullName = s.Player.FullName
 	res.GameID = game.GameID
 
-	if game.PlayerTurn == PlayerSelf {
+	if game.PlayerTurn == ssgame.PlayerSelf {
 		res.Starting = s.Player.PlayerID
 	} else {
 		res.Starting = game.Opponent.PlayerID
@@ -58,7 +60,7 @@ type GameStatusResponseGame struct {
 	PlayerTurn string `json:"player_turn"`
 }
 
-func GameStatusResponseFromGame(s *XLSpaceship, game *Game) *GameStatusResponse {
+func GameStatusResponseFromGame(s *XLSpaceship, game *ssgame.Game) *GameStatusResponse {
 	res := &GameStatusResponse{}
 
 	res.Self = GameStatusResponsePlayer{
@@ -78,7 +80,7 @@ type ReceiveSalvoRequest struct {
 
 type SalvoResponse struct {
 	Salvo map[string]string `json:"salvo"`
-	Game  interface{}       `json:"game"` // ewww interface, but alternative is having multiple structs for this response
+	Game  interface{}       `json:"ssgame"` // ewww interface, but alternative is having multiple structs for this response
 }
 
 type ReceiveSalvoResponseGame struct {
@@ -89,7 +91,7 @@ type ReceiveSalvoWonResponseGame struct {
 	Won string `json:"won"`
 }
 
-func ReceiveSalvoResponseFromSalvoResult(salvoResult []*ShotResult, s *XLSpaceship, game *Game) *SalvoResponse {
+func ReceiveSalvoResponseFromSalvoResult(salvoResult []*ssgame.ShotResult, s *XLSpaceship, game *ssgame.Game) *SalvoResponse {
 	res := &SalvoResponse{
 		Salvo: make(map[string]string, len(salvoResult)),
 	}
@@ -98,14 +100,14 @@ func ReceiveSalvoResponseFromSalvoResult(salvoResult []*ShotResult, s *XLSpacesh
 		res.Salvo[shotResult.Coords.String()] = shotResult.ShotStatus.String()
 	}
 
-	if game.Status == GameStatusDone {
+	if game.Status == ssgame.GameStatusDone {
 		gameRes := ReceiveSalvoWonResponseGame{}
 		gameRes.Won = game.Opponent.PlayerID
 
 		res.Game = gameRes
 	} else {
 		gameRes := ReceiveSalvoResponseGame{}
-		if game.PlayerTurn == PlayerSelf {
+		if game.PlayerTurn == ssgame.PlayerSelf {
 			gameRes.PlayerTurn = s.Player.PlayerID
 		} else {
 			gameRes.PlayerTurn = game.Opponent.PlayerID

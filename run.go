@@ -8,7 +8,7 @@ import (
 
 	"fmt"
 
-	"github.com/rubensayshi/xlspaceship/pkg"
+	"github.com/rubensayshi/xlspaceship/pkg/ssclient"
 )
 
 func maybeGetEnvInt(env string, dflt int) int {
@@ -42,7 +42,7 @@ func main() {
 	fmt.Printf("main \n")
 	flag.Parse()
 
-	s := pkg.NewXLSpaceship(*fPlayerID, "localhost", *fPort)
+	s := ssclient.NewXLSpaceship(*fPlayerID, "localhost", *fPort)
 
-	pkg.Serve(s, *fPort)
+	ssclient.Serve(s, *fPort)
 }

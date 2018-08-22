@@ -1,4 +1,4 @@
-package pkg
+package ssgame
 
 import (
 	"fmt"
@@ -260,6 +260,16 @@ func BoardFromPattern(pattern []string) (*Board, error) {
 
 func (b *Board) String() string {
 	return fmt.Sprintf("%s", strings.Join(b.ToPattern(), "\n"))
+}
+
+func (b *Board) AllShipsDead() bool {
+	for _, spaceship := range b.spaceships {
+		if !spaceship.dead {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (b *Board) ToPattern() []string {
