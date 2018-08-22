@@ -12,7 +12,6 @@ func Serve(s *XLSpaceship, port int) {
 
 	r := mux.NewRouter()
 
-	AddPingHandler(s, r)
 	AddNewGameHandler(s, r)
 	AddInitGameHandler(s, r)
 	AddGameStatusHandler(s, r)
@@ -24,15 +23,6 @@ func Serve(s *XLSpaceship, port int) {
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", port), r); err != nil {
 		panic(err)
 	}
-}
-
-func AddPingHandler(s *XLSpaceship, r *mux.Router) {
-	r.HandleFunc(URI_PREFIX+"/protocol/ping", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("%s \n", r.RequestURI)
-
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("pong"))
-	})
 }
 
 func AddNewGameHandler(s *XLSpaceship, r *mux.Router) {
@@ -47,18 +37,12 @@ func AddNewGameHandler(s *XLSpaceship, r *mux.Router) {
 			return
 		}
 
-		fmt.Printf("%s: %s \n", r.RequestURI, req)
-
-		game, err := s.NewGame(req.UserID, req.FullName, req.SpaceshipProtocol.Hostname, req.SpaceshipProtocol.Port)
+		res, err := s.NewGame(req)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(fmt.Sprintf("Failed to create game: %s", err)))
 			return
 		}
-
-		fmt.Printf("new game:\n%s \n", game)
-
-		res := NewGameResponseFromGame(s, game)
 
 		resJson, err := json.MarshalIndent(res, "", "    ")
 		if err != nil {
@@ -84,19 +68,17 @@ func AddInitGameHandler(s *XLSpaceship, r *mux.Router) {
 			return
 		}
 
-		game, err := s.InitNewGame(req.SpaceshipProtocol.Hostname, req.SpaceshipProtocol.Port)
+		gameID, err := s.InitNewGame(req)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(fmt.Sprintf("Failed to init game: %s", err)))
 			return
 		}
 
-		fmt.Printf("init game:\n%s \n", game)
-
 		w.Header().Set("Content-Type", "text/html")
-		w.Header().Set("Location", fmt.Sprintf("/xl-spaceship/user/game/%s", game.GameID))
+		w.Header().Set("Location", fmt.Sprintf("/xl-spaceship/user/game/%s", gameID))
 		w.WriteHeader(http.StatusSeeOther)
-		w.Write([]byte(fmt.Sprintf("A new game has been created at xl-spaceship/user/game/%s", game.GameID)))
+		w.Write([]byte(fmt.Sprintf("A new game has been created at xl-spaceship/user/game/%s", gameID)))
 	})
 }
 
@@ -107,16 +89,12 @@ func AddGameStatusHandler(s *XLSpaceship, r *mux.Router) {
 		vars := mux.Vars(r)
 		gameID := vars["gameID"]
 
-		game, ok := s.games[gameID]
+		res, ok := s.GameStatus(gameID)
 		if !ok {
 			w.WriteHeader(http.StatusNotFound)
 			w.Write([]byte(fmt.Sprintf("Game not found")))
 			return
 		}
-
-		fmt.Printf("game:\n %s \n", game)
-
-		res := GameStatusResponseFromGame(s, game)
 
 		resJson, err := json.MarshalIndent(res, "", "    ")
 		if err != nil {
@@ -186,24 +164,12 @@ func AddFireSalvoHandler(s *XLSpaceship, r *mux.Router) {
 			return
 		}
 
-		salvoRes, err := s.FireSalvo(game, salvo)
+		res, err := s.FireSalvo(game, salvo)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(fmt.Sprintf("%s", err)))
 			return
 		}
-		game.PlayerTurn = PlayerOpponent
-
-		// @TODO
-		win := false
-		if win {
-			game.Status = GameStatusDone
-			game.PlayerWon = PlayerOpponent
-		}
-
-		fmt.Printf("game:\n %s \n", game)
-
-		res := ReceiveSalvoResponseFromSalvoResult(salvoRes, s, game)
 
 		resJson, err := json.MarshalIndent(res, "", "    ")
 		if err != nil {
@@ -295,25 +261,11 @@ func AddReceiveSalvoHandler(s *XLSpaceship, r *mux.Router) {
 			return
 		}
 
-		salvoRes := game.SelfBoard.ReceiveSalvo(salvo)
-		game.PlayerTurn = PlayerSelf
-
-		win := true
-		for _, spaceship := range game.SelfBoard.spaceships {
-			if !spaceship.dead {
-				win = false
-				break
-			}
+		res, err := s.ReceiveSalvo(game, salvo)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(fmt.Sprintf("Failed to receive salvo")))
 		}
-
-		if win {
-			game.Status = GameStatusDone
-			game.PlayerWon = PlayerOpponent
-		}
-
-		fmt.Printf("game:\n %s \n", game)
-
-		res := ReceiveSalvoResponseFromSalvoResult(salvoRes, s, game)
 
 		resJson, err := json.MarshalIndent(res, "", "    ")
 		if err != nil {

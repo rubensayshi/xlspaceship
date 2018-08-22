@@ -76,9 +76,9 @@ type ReceiveSalvoRequest struct {
 	Salvo []string `json:"salvo"`
 }
 
-type ReceiveSalvoResponse struct {
+type SalvoResponse struct {
 	Salvo map[string]string `json:"salvo"`
-	Game  interface{}       `json:"game"` // ewww
+	Game  interface{}       `json:"game"` // ewww interface, but alternative is having multiple structs for this response
 }
 
 type ReceiveSalvoResponseGame struct {
@@ -89,8 +89,8 @@ type ReceiveSalvoWonResponseGame struct {
 	Won string `json:"won"`
 }
 
-func ReceiveSalvoResponseFromSalvoResult(salvoResult []*ShotResult, s *XLSpaceship, game *Game) *ReceiveSalvoResponse {
-	res := &ReceiveSalvoResponse{
+func ReceiveSalvoResponseFromSalvoResult(salvoResult []*ShotResult, s *XLSpaceship, game *Game) *SalvoResponse {
+	res := &SalvoResponse{
 		Salvo: make(map[string]string, len(salvoResult)),
 	}
 

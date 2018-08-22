@@ -41,12 +41,12 @@ func NewXLSpaceship(playerID string, host string, port int) *XLSpaceship {
 	return s
 }
 
-func (s *XLSpaceship) NewGame(opponentPlayerID string, opponentName string, opponentHost string, opponentPort int) (*Game, error) {
+func (s *XLSpaceship) NewGame(req *NewGameRequest) (*NewGameResponse, error) {
 	opponent := &Player{
-		PlayerID:     opponentPlayerID,
-		FullName:     opponentName,
-		ProtocolHost: opponentHost,
-		ProtocolPort: opponentPort,
+		PlayerID:     req.UserID,
+		FullName:     req.FullName,
+		ProtocolHost: req.SpaceshipProtocol.Hostname,
+		ProtocolPort: req.SpaceshipProtocol.Port,
 	}
 
 	game, err := CreateNewGame(opponent)
@@ -56,30 +56,31 @@ func (s *XLSpaceship) NewGame(opponentPlayerID string, opponentName string, oppo
 
 	s.games[game.GameID] = game
 
-	return game, nil
+	res := NewGameResponseFromGame(s, game)
+	return res, nil
 }
 
-func (s *XLSpaceship) InitNewGame(opponentHost string, opponentPort int) (*Game, error) {
-	req := NewGameRequest{
+func (s *XLSpaceship) InitNewGame(req *InitGameRequest) (string, error) {
+	newGameReq := NewGameRequest{
 		UserID:            s.Player.PlayerID,
 		FullName:          s.Player.FullName,
 		SpaceshipProtocol: GameRequestSpaceshipProtocol{s.Player.ProtocolHost, s.Player.ProtocolPort},
 	}
-	reqJson, err := json.Marshal(req)
+	reqJson, err := json.Marshal(newGameReq)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Failed to init game")
+		return "", errors.Wrapf(err, "Failed to init game")
 	}
 
-	res, err := http.Post(fmt.Sprintf("http://%s:%d/xl-spaceship/protocol/game/new", opponentHost, opponentPort), "application/json", bytes.NewBuffer(reqJson))
+	res, err := http.Post(fmt.Sprintf("http://%s:%d/xl-spaceship/protocol/game/new", req.SpaceshipProtocol.Hostname, req.SpaceshipProtocol.Port), "application/json", bytes.NewBuffer(reqJson))
 	if err != nil || res.StatusCode != http.StatusCreated {
-		return nil, errors.Wrapf(err, "Failed to init game")
+		return "", errors.Wrapf(err, "Failed to init game")
 	}
 	defer res.Body.Close()
 
 	newGameRes := &NewGameResponse{}
 	err = json.NewDecoder(res.Body).Decode(newGameRes)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Failed to init game")
+		return "", errors.Wrapf(err, "Failed to init game")
 	}
 
 	firstPlayer := PlayerSelf
@@ -90,21 +91,32 @@ func (s *XLSpaceship) InitNewGame(opponentHost string, opponentPort int) (*Game,
 	opponent := &Player{
 		PlayerID:     newGameRes.UserID,
 		FullName:     newGameRes.FullName,
-		ProtocolHost: opponentHost,
-		ProtocolPort: opponentPort,
+		ProtocolHost: req.SpaceshipProtocol.Hostname,
+		ProtocolPort: req.SpaceshipProtocol.Port,
 	}
 
 	game, err := InitNewGame(newGameRes.GameID, opponent, firstPlayer)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Failed to init game")
+		return "", errors.Wrapf(err, "Failed to init game")
 	}
 
 	s.games[game.GameID] = game
 
-	return game, nil
+	return game.GameID, nil
 }
 
-func (s *XLSpaceship) FireSalvo(game *Game, salvo CoordsGroup) ([]*ShotResult, error) {
+func (s *XLSpaceship) GameStatus(gameID string) (*GameStatusResponse, bool) {
+	game, ok := s.games[gameID]
+	if !ok {
+		return nil, false
+	}
+
+	res := GameStatusResponseFromGame(s, game)
+
+	return res, true
+}
+
+func (s *XLSpaceship) FireSalvo(game *Game, salvo CoordsGroup) (*SalvoResponse, error) {
 	req := ReceiveSalvoRequest{
 		Salvo: make([]string, len(salvo)),
 	}
@@ -124,13 +136,13 @@ func (s *XLSpaceship) FireSalvo(game *Game, salvo CoordsGroup) ([]*ShotResult, e
 	}
 	defer res.Body.Close()
 
-	newGameRes := &ReceiveSalvoResponse{}
+	newGameRes := &SalvoResponse{}
 	err = json.NewDecoder(res.Body).Decode(newGameRes)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Failed to fire salvo")
+		return nil, errors.Wrapf(err, "Failed to fire salvo: unmarshall response")
 	}
 
-	shotsRes := make([]*ShotResult, 0, len(newGameRes.Salvo))
+	salvoRes := make([]*ShotResult, 0, len(newGameRes.Salvo))
 	for coordsStr, shotResStr := range newGameRes.Salvo {
 		coords, err := CoordsFromString(coordsStr)
 		if err != nil {
@@ -142,12 +154,39 @@ func (s *XLSpaceship) FireSalvo(game *Game, salvo CoordsGroup) ([]*ShotResult, e
 			return nil, errors.Wrapf(err, "Failed to fire salvo")
 		}
 
-		shotsRes = append(shotsRes, &ShotResult{coords, shotStatus})
+		salvoRes = append(salvoRes, &ShotResult{coords, shotStatus})
 	}
 
 	game.PlayerTurn = PlayerOpponent
 
-	return shotsRes, nil
+	// @TODO
+	win := false
+	if win {
+		game.Status = GameStatusDone
+		game.PlayerWon = PlayerOpponent
+	}
+
+	return ReceiveSalvoResponseFromSalvoResult(salvoRes, s, game), nil
+}
+
+func (s *XLSpaceship) ReceiveSalvo(game *Game, salvo CoordsGroup) (*SalvoResponse, error) {
+	salvoRes := game.SelfBoard.ReceiveSalvo(salvo)
+	game.PlayerTurn = PlayerSelf
+
+	win := true
+	for _, spaceship := range game.SelfBoard.spaceships {
+		if !spaceship.dead {
+			win = false
+			break
+		}
+	}
+
+	if win {
+		game.Status = GameStatusDone
+		game.PlayerWon = PlayerOpponent
+	}
+
+	return ReceiveSalvoResponseFromSalvoResult(salvoRes, s, game), nil
 }
 
 func Put(url string, contentType string, body io.Reader) (*http.Response, error) {
