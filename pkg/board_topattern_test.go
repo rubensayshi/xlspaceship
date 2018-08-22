@@ -38,7 +38,7 @@ func TestBoardToPattern(t *testing.T) {
 	assert.Equal(pattern, board.ToPattern())
 }
 
-func TestBoardToPatternWithShips(t *testing.T) {
+func TestBoardToPatternWithShipsNoMarks(t *testing.T) {
 	assert := require.New(t)
 
 	expectedPattern := []string{
@@ -56,8 +56,8 @@ func TestBoardToPatternWithShips(t *testing.T) {
 		"..**............",
 		".*..............",
 		"..**............",
-		"...*............",
-		".**.............",
+		"....*...........",
+		"..**............",
 	}
 
 	board, err := BoardFromPattern(BlankBoardPattern())
@@ -121,8 +121,8 @@ func TestBoardToPatternWithShipsAndMarks(t *testing.T) {
 		"..**.......-....",
 		".*..........-...",
 		"..**.........-..",
-		"...*..........-.",
-		".**............-",
+		"....*.........-.",
+		"..**...........-",
 	}
 
 	board, err := BoardFromPattern(pattern)

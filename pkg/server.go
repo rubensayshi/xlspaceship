@@ -123,15 +123,21 @@ func AddReceiveSalvoHandler(s *XLSpaceship, mux *http.ServeMux) {
 
 		fmt.Printf("game:\n %s \n", game)
 
-		if game.PlayerTurn != PlayerOpponent || game.Status != GameStatusOnGoing {
+		if game.Status != GameStatusOnGoing {
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(fmt.Sprintf("Not your turn or game already done")))
+			w.Write([]byte(fmt.Sprintf("Game already done")))
+			return
+		}
+
+		if game.PlayerTurn != PlayerOpponent {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(fmt.Sprintf("Not your turn")))
 			return
 		}
 
 		// parse salvo into coords
 		// @TODO: test for what happens when out of bounds
-		salvo := make([]*Coords, len(req.Salvo))
+		salvo := make(CoordsGroup, len(req.Salvo))
 		for i, coordsStr := range req.Salvo {
 			coords, err := CoordsFromString(coordsStr)
 			if err != nil {
@@ -144,10 +150,24 @@ func AddReceiveSalvoHandler(s *XLSpaceship, mux *http.ServeMux) {
 		}
 
 		salvoRes := game.SelfBoard.ReceiveSalvo(salvo)
+		game.PlayerTurn = PlayerSelf
+
+		win := true
+		for _, spaceship := range game.SelfBoard.spaceships {
+			fmt.Printf("spaceship dead? %v \n%s \n", spaceship.dead, spaceship.coords)
+			if !spaceship.dead {
+				win = false
+				break
+			}
+		}
+
+		if win {
+			game.Status = GameStatusDone
+		}
 
 		fmt.Printf("game:\n %s \n", game)
 
-		res := ReceiveSalvoResponseFromSalvoResult(salvoRes, game)
+		res := ReceiveSalvoResponseFromSalvoResult(salvoRes, s, game)
 
 		resJson, err := json.MarshalIndent(res, "", "    ")
 		if err != nil {

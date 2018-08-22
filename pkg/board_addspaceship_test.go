@@ -267,3 +267,41 @@ func TestBoard_AddSpaceshipOnCoordsInvalidOverlap3X0(t *testing.T) {
 	err = board.AddSpaceshipOnCoords(spaceship2, 3, 0)
 	assert.Error(err)
 }
+
+func TestBoard_AddSpaceshipOnCoordsInvalidOverlapWingerB(t *testing.T) {
+	assert := require.New(t)
+
+	pattern := []string{
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+	}
+
+	board, err := BoardFromPattern(pattern)
+	assert.NoError(err)
+
+	spaceship1, err := SpaceshipFromPattern(SpaceshipPatternWinger)
+	assert.NoError(err)
+
+	spaceship2, err := SpaceshipFromPattern(SpaceshipPatternBClass)
+	assert.NoError(err)
+
+	err = board.AddSpaceshipOnCoords(spaceship1, 8, 9)
+	assert.NoError(err)
+
+	err = board.AddSpaceshipOnCoords(spaceship2, 9, 10)
+	assert.Error(err)
+}

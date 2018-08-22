@@ -74,20 +74,40 @@ type ReceiveSalvoRequest struct {
 
 type ReceiveSalvoResponse struct {
 	Salvo map[string]string `json:"salvo"`
-	Game  string            `json:"game"`
+	Game  interface{}       `json:"game"` // ewww
 }
 
 type ReceiveSalvoResponseGame struct {
 	PlayerTurn string `json:"player_turn"`
 }
 
-func ReceiveSalvoResponseFromSalvoResult(salvoResult []*ShotResult, game *Game) *ReceiveSalvoResponse {
+type ReceiveSalvoWonResponseGame struct {
+	Won string `json:"won"`
+}
+
+func ReceiveSalvoResponseFromSalvoResult(salvoResult []*ShotResult, s *XLSpaceship, game *Game) *ReceiveSalvoResponse {
 	res := &ReceiveSalvoResponse{
 		Salvo: make(map[string]string, len(salvoResult)),
 	}
 
 	for _, shotResult := range salvoResult {
 		res.Salvo[shotResult.Coords.String()] = shotResult.ShotStatus.String()
+	}
+
+	if game.Status == GameStatusDone {
+		gameRes := ReceiveSalvoWonResponseGame{}
+		gameRes.Won = game.OpponentPlayerID
+
+		res.Game = gameRes
+	} else {
+		gameRes := ReceiveSalvoResponseGame{}
+		if game.PlayerTurn == PlayerSelf {
+			gameRes.PlayerTurn = s.PlayerID
+		} else {
+			gameRes.PlayerTurn = game.OpponentPlayerID
+		}
+
+		res.Game = gameRes
 	}
 
 	return res

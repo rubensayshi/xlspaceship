@@ -289,15 +289,22 @@ func (b *Board) AddSpaceship(spaceship *Spaceship) error {
 func (b *Board) AddSpaceshipOnCoords(spaceship *Spaceship, x uint8, y uint8) error {
 	// @TODO: we should store coords of existing spaceships so we don't have to loop over them
 	for _, coords := range spaceship.coords {
-		if coords.x+x >= ROWS {
-			return errors.New(fmt.Sprintf("Failed to add spaceship, x overflow (%d + %d = %d)", x, coords.x, coords.x+x))
-		}
-		if coords.y+y >= COLS {
-			return errors.New(fmt.Sprintf("Failed to add spaceship, y overflow (%d + %d = %d)", y, coords.y, coords.y+y))
+		offsetCoords := &Coords{
+			x: coords.x + x,
+			y: coords.y + y,
 		}
 
+		// check spaceship stays within bounds
+		if offsetCoords.x >= COLS {
+			return errors.New(fmt.Sprintf("Failed to add spaceship, y overflow (%d + %d = %d)", y, coords.y, coords.y+y))
+		}
+		if offsetCoords.y >= ROWS {
+			return errors.New(fmt.Sprintf("Failed to add spaceship, x overflow (%d + %d = %d)", x, coords.x, coords.x+x))
+		}
+
+		// check spaceship doesn't overlap with other spaceships
 		for _, otherSpaceship := range b.spaceships {
-			if otherSpaceship.coords.Contains(coords) {
+			if otherSpaceship.coords.Contains(offsetCoords) {
 				return errors.New(fmt.Sprintf("Failed to add spaceship, coords already contains spaceship (%dx%d)", coords.x, coords.y))
 			}
 		}
@@ -339,6 +346,8 @@ func (b *Board) ApplyShot(shot *Coords) *ShotResult {
 			spaceship.hits = append(spaceship.hits, shot)
 			b.hits = append(b.hits, shot)
 
+			fmt.Printf("")
+
 			// if we've hit all the coords then it's a kill
 			if len(spaceship.hits) == len(spaceship.coords) {
 				spaceship.dead = true
@@ -363,9 +372,10 @@ func (b *Board) ApplyShot(shot *Coords) *ShotResult {
 }
 
 type Spaceship struct {
-	coords CoordsGroup
-	hits   CoordsGroup
-	dead   bool
+	pattern []string
+	coords  CoordsGroup
+	hits    CoordsGroup
+	dead    bool
 }
 
 // @TODO: should sanitize any padding
@@ -390,8 +400,9 @@ func SpaceshipFromPattern(pattern []string) (*Spaceship, error) {
 	}
 
 	spaceship := &Spaceship{
-		hits: make(CoordsGroup, 0),
-		dead: false,
+		pattern: pattern,
+		hits:    make(CoordsGroup, 0),
+		dead:    false,
 	}
 
 	// parse the input
@@ -413,4 +424,8 @@ func SpaceshipFromPattern(pattern []string) (*Spaceship, error) {
 	}
 
 	return spaceship, nil
+}
+
+func (s *Spaceship) String() string {
+	return fmt.Sprintf("%s", strings.Join(s.pattern, "\n"))
 }
