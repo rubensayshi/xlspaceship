@@ -14,9 +14,8 @@ func init() {
 type GameStatus uint8
 
 const (
-	GameStatusInitializing GameStatus = 0
-	GameStatusOnGoing      GameStatus = 1
-	GameStatusDone         GameStatus = 2
+	GameStatusOnGoing GameStatus = 0
+	GameStatusDone    GameStatus = 1
 )
 
 type PlayerT uint8
@@ -58,7 +57,7 @@ type Game struct {
 }
 
 func CreateNewGame(opponent *Player) (*Game, error) {
-	selfBoard, err := NewRandomBoard()
+	selfBoard, err := NewRandomBoard(SpaceshipsSetForBaseGame)
 	if err != nil {
 		return nil, err
 	}
@@ -73,21 +72,18 @@ func CreateNewGame(opponent *Player) (*Game, error) {
 	game := &Game{
 		GameID:        RandomGameID(),
 		Opponent:      opponent,
-		Status:        GameStatusInitializing,
+		Status:        GameStatusOnGoing,
 		SelfBoard:     selfBoard,
 		OpponentBoard: opponentBoard,
 		PlayerTurn:    firstPlayer,
 		PlayerWon:     PlayerNone,
 	}
 
-	// start the game
-	game.Status = GameStatusOnGoing
-
 	return game, nil
 }
 
 func InitNewGame(gameID string, opponent *Player, firstPlayer PlayerT) (*Game, error) {
-	selfBoard, err := NewRandomBoard()
+	selfBoard, err := NewRandomBoard(SpaceshipsSetForBaseGame)
 	if err != nil {
 		return nil, err
 	}
@@ -100,15 +96,12 @@ func InitNewGame(gameID string, opponent *Player, firstPlayer PlayerT) (*Game, e
 	game := &Game{
 		GameID:        gameID,
 		Opponent:      opponent,
-		Status:        GameStatusInitializing,
+		Status:        GameStatusOnGoing,
 		SelfBoard:     selfBoard,
 		OpponentBoard: opponentBoard,
 		PlayerTurn:    firstPlayer,
 		PlayerWon:     PlayerNone,
 	}
-
-	// start the game
-	game.Status = GameStatusOnGoing
 
 	return game, nil
 }

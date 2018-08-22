@@ -37,3 +37,11 @@ var SpaceshipPatternSClass = []string{
 	"...*",
 	".**",
 }
+
+var SpaceshipsSetForBaseGame = [][]string{
+	SpaceshipPatternWinger,
+	SpaceshipPatternAngle,
+	SpaceshipPatternAClass,
+	SpaceshipPatternBClass,
+	SpaceshipPatternSClass,
+}

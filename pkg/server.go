@@ -9,7 +9,6 @@ import (
 )
 
 func Serve(s *XLSpaceship, port int) {
-
 	r := mux.NewRouter()
 
 	AddNewGameHandler(s, r)
@@ -26,7 +25,7 @@ func Serve(s *XLSpaceship, port int) {
 }
 
 func AddNewGameHandler(s *XLSpaceship, r *mux.Router) {
-	r.HandleFunc(URI_PREFIX+"/protocol/game/new", func(w http.ResponseWriter, r *http.Request) {
+	r.HandleFunc("/xl-spaceship/protocol/game/new", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("%s \n", r.RequestURI)
 
 		req := &NewGameRequest{}
@@ -57,7 +56,7 @@ func AddNewGameHandler(s *XLSpaceship, r *mux.Router) {
 }
 
 func AddInitGameHandler(s *XLSpaceship, r *mux.Router) {
-	r.HandleFunc(URI_PREFIX+"/user/game/new", func(w http.ResponseWriter, r *http.Request) {
+	r.HandleFunc("/xl-spaceship/user/game/new", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("%s \n", r.RequestURI)
 
 		req := &InitGameRequest{}
@@ -83,7 +82,7 @@ func AddInitGameHandler(s *XLSpaceship, r *mux.Router) {
 }
 
 func AddGameStatusHandler(s *XLSpaceship, r *mux.Router) {
-	r.HandleFunc(URI_PREFIX+"/user/game/", func(w http.ResponseWriter, r *http.Request) {
+	r.HandleFunc("/xl-spaceship/user/game/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("%s \n", r.RequestURI)
 
 		vars := mux.Vars(r)
@@ -109,7 +108,7 @@ func AddGameStatusHandler(s *XLSpaceship, r *mux.Router) {
 }
 
 func AddFireSalvoHandler(s *XLSpaceship, r *mux.Router) {
-	r.HandleFunc(URI_PREFIX+"/user/game/{gameID}/fire", func(w http.ResponseWriter, r *http.Request) {
+	r.HandleFunc("/xl-spaceship/user/game/{gameID}/fire", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("%s \n", r.RequestURI)
 
 		vars := mux.Vars(r)
@@ -123,6 +122,7 @@ func AddFireSalvoHandler(s *XLSpaceship, r *mux.Router) {
 			return
 		}
 
+		// check if the game exists
 		game, ok := s.games[gameID]
 		if !ok {
 			w.WriteHeader(http.StatusBadRequest)
@@ -130,25 +130,12 @@ func AddFireSalvoHandler(s *XLSpaceship, r *mux.Router) {
 			return
 		}
 
-		fmt.Printf("game:\n %s \n", game)
-
 		// parse salvo into coords
 		// @TODO: test for what happens when out of bounds
-		salvo := make(CoordsGroup, len(req.Salvo))
-		for i, coordsStr := range req.Salvo {
-			coords, err := CoordsFromString(coordsStr)
-			if err != nil {
-				w.WriteHeader(http.StatusBadRequest)
-				w.Write([]byte(fmt.Sprintf("Coords invalid")))
-				return
-			}
-
-			salvo[i] = coords
-		}
-
-		if game.Status == GameStatusInitializing {
+		salvo, err := CoordsGroupFromSalvoStrings(req.Salvo)
+		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(fmt.Sprintf("Game hasn't been started yet")))
+			w.Write([]byte(fmt.Sprintf("Coords invalid")))
 			return
 		}
 
@@ -157,13 +144,7 @@ func AddFireSalvoHandler(s *XLSpaceship, r *mux.Router) {
 			panic("done")
 		}
 
-		// @TODO: should we remove this check and rely on the response?
-		if game.PlayerTurn != PlayerSelf {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(fmt.Sprintf("Not your turn")))
-			return
-		}
-
+		// fire off the salvo
 		res, err := s.FireSalvo(game, salvo)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -184,7 +165,7 @@ func AddFireSalvoHandler(s *XLSpaceship, r *mux.Router) {
 }
 
 func AddReceiveSalvoHandler(s *XLSpaceship, r *mux.Router) {
-	r.HandleFunc(URI_PREFIX+"/protocol/game/{gameID}", func(w http.ResponseWriter, r *http.Request) {
+	r.HandleFunc("/xl-spaceship/protocol/game/{gameID}", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("%s \n", r.RequestURI)
 
 		vars := mux.Vars(r)
@@ -198,11 +179,7 @@ func AddReceiveSalvoHandler(s *XLSpaceship, r *mux.Router) {
 			return
 		}
 
-		if gameID == "game" {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
+		// check if game exists
 		game, ok := s.games[gameID]
 		if !ok {
 			w.WriteHeader(http.StatusBadRequest)
@@ -210,28 +187,16 @@ func AddReceiveSalvoHandler(s *XLSpaceship, r *mux.Router) {
 			return
 		}
 
-		fmt.Printf("game:\n %s \n", game)
-
 		// parse salvo into coords
 		// @TODO: test for what happens when out of bounds
-		salvo := make(CoordsGroup, len(req.Salvo))
-		for i, coordsStr := range req.Salvo {
-			coords, err := CoordsFromString(coordsStr)
-			if err != nil {
-				w.WriteHeader(http.StatusBadRequest)
-				w.Write([]byte(fmt.Sprintf("Coords invalid")))
-				return
-			}
-
-			salvo[i] = coords
-		}
-
-		if game.Status == GameStatusInitializing {
+		salvo, err := CoordsGroupFromSalvoStrings(req.Salvo)
+		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(fmt.Sprintf("Game hasn't been started yet")))
+			w.Write([]byte(fmt.Sprintf("Coords invalid")))
 			return
 		}
 
+		// if the game is already done then we create a mock response with misses
 		if game.Status == GameStatusDone {
 			salvoRes := make([]*ShotResult, len(salvo))
 			for i, shot := range salvo {
@@ -255,12 +220,14 @@ func AddReceiveSalvoHandler(s *XLSpaceship, r *mux.Router) {
 			return
 		}
 
+		// check if it's the opponent's turn, otherwise he's not allowed to fire
 		if game.PlayerTurn != PlayerOpponent {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(fmt.Sprintf("Not your turn")))
 			return
 		}
 
+		// process the incoming salvo
 		res, err := s.ReceiveSalvo(game, salvo)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)

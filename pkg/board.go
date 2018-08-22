@@ -140,6 +140,20 @@ func (c Coords) String() string {
 
 type CoordsGroup []*Coords
 
+func CoordsGroupFromSalvoStrings(salvo []string) (CoordsGroup, error) {
+	cg := make(CoordsGroup, len(salvo))
+	for i, coordsStr := range salvo {
+		coords, err := CoordsFromString(coordsStr)
+		if err != nil {
+			return nil, err
+		}
+
+		cg[i] = coords
+	}
+
+	return cg, nil
+}
+
 func (cg CoordsGroup) Contains(coords *Coords) bool {
 	for _, cgCoords := range cg {
 		if cgCoords.x == coords.x && cgCoords.y == coords.y {
@@ -161,29 +175,12 @@ type Board struct {
 	misses     CoordsGroup
 }
 
-func NewRandomBoard() (*Board, error) {
+func NewRandomBoard(spaceships [][]string) (*Board, error) {
 	// we retry to create a random board 100 times incase the spaceships didn't fit (should never happen with default board size and spaceships)
 	for i := 0; i < 100; i++ {
-		board := &Board{}
-
-		for _, spaceshipPattern := range [][]string{
-			SpaceshipPatternWinger,
-			SpaceshipPatternAngle,
-			SpaceshipPatternAClass,
-			SpaceshipPatternBClass,
-			SpaceshipPatternSClass,
-		} {
-			spaceship, err := SpaceshipFromPattern(spaceshipPattern)
-			if err != nil {
-				return nil, err
-			}
-
-			// attemp to add spaceship, if we fail we nil the board so that we keep trying
-			err = board.AddSpaceship(spaceship)
-			if err != nil {
-				board = nil
-				break
-			}
+		board, err := newRandomBoard(spaceships)
+		if err != nil {
+			return nil, err
 		}
 
 		if board != nil {
@@ -192,6 +189,26 @@ func NewRandomBoard() (*Board, error) {
 	}
 
 	return nil, errors.New("Failed to create a random board")
+}
+
+func newRandomBoard(spaceships [][]string) (*Board, error) {
+	board := &Board{}
+
+	for _, spaceshipPattern := range spaceships {
+		spaceship, err := SpaceshipFromPattern(spaceshipPattern)
+		if err != nil {
+			return nil, err
+		}
+
+		// attempt to add spaceship, if we fail we nil the board so that we keep trying
+		err = board.AddSpaceship(spaceship)
+		if err != nil {
+			board = nil
+			break
+		}
+	}
+
+	return board, nil
 }
 
 func BoardFromPattern(pattern []string) (*Board, error) {
@@ -229,7 +246,7 @@ func BoardFromPattern(pattern []string) (*Board, error) {
 			case CoordsBlank:
 				// - nothing to do
 			case CoordsShip:
-				// @TODO: not implemented
+				// @TODO: not implemented, the dream is to store them and try and match the patterns to our known spaceships
 			case CoordsHit:
 				board.hits = append(board.hits, &Coords{x: uint8(x), y: uint8(y)})
 			case CoordsMiss:
@@ -337,8 +354,6 @@ func (b *Board) AddSpaceshipOnCoords(spaceship *Spaceship, x uint8, y uint8) err
 }
 
 func (b *Board) ReceiveSalvo(salvo CoordsGroup) []*ShotResult {
-	// @TODO: we need to assert that it's the correct amount of shots
-
 	res := make([]*ShotResult, len(salvo))
 	for i, shot := range salvo {
 		res[i] = b.ApplyShot(shot)

@@ -7,8 +7,6 @@ import (
 
 	"io"
 
-	"fmt"
-
 	"github.com/pkg/errors"
 )
 
@@ -122,8 +120,6 @@ func (s *XLSpaceship) FireSalvo(game *Game, salvo CoordsGroup) (*SalvoResponse, 
 		return nil, errors.Wrapf(err, "Failed to fire salvo")
 	}
 
-	fmt.Printf("%v | %v \n", res, err)
-
 	salvoRes := make([]*ShotResult, 0, len(res.Salvo))
 	for coordsStr, shotResStr := range res.Salvo {
 		coords, err := CoordsFromString(coordsStr)
@@ -148,22 +144,26 @@ func (s *XLSpaceship) FireSalvo(game *Game, salvo CoordsGroup) (*SalvoResponse, 
 		game.PlayerWon = PlayerOpponent
 	}
 
+	// @TODO: mark result on our end
+
 	return ReceiveSalvoResponseFromSalvoResult(salvoRes, s, game), nil
 }
 
 func (s *XLSpaceship) ReceiveSalvo(game *Game, salvo CoordsGroup) (*SalvoResponse, error) {
+	// @TODO: we need to assert that the amount of shots in the salvo match the rules (5 shots)
+
 	salvoRes := game.SelfBoard.ReceiveSalvo(salvo)
 	game.PlayerTurn = PlayerSelf
 
-	win := true
+	rip := true
 	for _, spaceship := range game.SelfBoard.spaceships {
 		if !spaceship.dead {
-			win = false
+			rip = false
 			break
 		}
 	}
 
-	if win {
+	if rip {
 		game.Status = GameStatusDone
 		game.PlayerWon = PlayerOpponent
 	}
@@ -171,8 +171,9 @@ func (s *XLSpaceship) ReceiveSalvo(game *Game, salvo CoordsGroup) (*SalvoRespons
 	return ReceiveSalvoResponseFromSalvoResult(salvoRes, s, game), nil
 }
 
+// Helper function to do PUT requests because http builtin only has helpers for GET and POST >_>
 func Put(url string, contentType string, body io.Reader) (*http.Response, error) {
-	req, err := http.NewRequest("POST", url, body)
+	req, err := http.NewRequest("PUT", url, body)
 	if err != nil {
 		return nil, err
 	}

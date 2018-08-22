@@ -3,6 +3,8 @@ package pkg
 import (
 	"testing"
 
+	"strings"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -36,6 +38,8 @@ func TestBoardToPattern(t *testing.T) {
 	assert.Equal(0, len(board.spaceships))
 
 	assert.Equal(pattern, board.ToPattern())
+
+	assert.Equal(strings.Join(pattern, "\n"), board.String())
 }
 
 func TestBoardToPatternWithShipsNoMarks(t *testing.T) {

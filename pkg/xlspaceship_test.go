@@ -6,6 +6,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// @TODO: ReceiveSalvo test
+
 func mustCoordsFromString(coordsStr string) *Coords {
 	coords, err := CoordsFromString(coordsStr)
 	if err != nil {

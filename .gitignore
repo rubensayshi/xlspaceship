@@ -2,4 +2,4 @@ debug
 gin-bin
 glide.lock
 vendor
-
+coverage.out
