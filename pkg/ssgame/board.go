@@ -8,12 +8,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-func init() {
-	// this should be replaced by crypto/rand with proper seeding for secure random numbers
-	//  but for this exercise it's much nicer if it's not really random
-	rand.Seed(1)
-}
-
 func BlankBoardPattern() []string {
 	return []string{
 		"................",
@@ -183,7 +177,12 @@ func (b *Board) AddSpaceship(spaceship *Spaceship) error {
 		x := rand.Intn(COLS)
 		y := rand.Intn(ROWS)
 
-		err := b.AddSpaceshipOnCoords(spaceship, uint8(x), uint8(y))
+		// rotate degrees
+		//rotate := rand.Intn(3) * 90
+
+		newSpaceship := spaceship.CopyWithOffset(uint8(x), uint8(y))
+
+		err := b.AddSpaceshipOnCoords(newSpaceship)
 		// we're done if no err
 		if err == nil {
 			return nil
@@ -193,34 +192,23 @@ func (b *Board) AddSpaceship(spaceship *Spaceship) error {
 	return errors.New("Failed to add spaceship, seems impossible")
 }
 
-func (b *Board) AddSpaceshipOnCoords(spaceship *Spaceship, x uint8, y uint8) error {
+func (b *Board) AddSpaceshipOnCoords(spaceship *Spaceship) error {
 	// @TODO: we should store coords of existing spaceships so we don't have to loop over them
 	for _, coords := range spaceship.coords {
-		offsetCoords := &Coords{
-			x: coords.x + x,
-			y: coords.y + y,
-		}
-
 		// check spaceship stays within bounds
-		if offsetCoords.x >= COLS {
-			return errors.New(fmt.Sprintf("Failed to add spaceship, y overflow (%d + %d = %d)", y, coords.y, coords.y+y))
+		if coords.x >= COLS {
+			return errors.New(fmt.Sprintf("Failed to add spaceship, y overflow (%s)", coords))
 		}
-		if offsetCoords.y >= ROWS {
-			return errors.New(fmt.Sprintf("Failed to add spaceship, x overflow (%d + %d = %d)", x, coords.x, coords.x+x))
+		if coords.y >= ROWS {
+			return errors.New(fmt.Sprintf("Failed to add spaceship, x overflow (%s)", coords))
 		}
 
 		// check spaceship doesn't overlap with other spaceships
 		for _, otherSpaceship := range b.spaceships {
-			if otherSpaceship.coords.Contains(offsetCoords) {
-				return errors.New(fmt.Sprintf("Failed to add spaceship, coords already contains spaceship (%dx%d)", coords.x, coords.y))
+			if otherSpaceship.coords.Contains(coords) {
+				return errors.New(fmt.Sprintf("Failed to add spaceship, coords already contains spaceship (%s)", coords))
 			}
 		}
-	}
-
-	// offset the spaceship coords with the coords it's placed on
-	for _, coords := range spaceship.coords {
-		coords.x += x
-		coords.y += y
 	}
 
 	// add spaceship to board
@@ -274,63 +262,4 @@ func (b *Board) ApplyShot(shot *Coords) *ShotResult {
 	}
 
 	return res
-}
-
-type Spaceship struct {
-	pattern []string
-	coords  CoordsGroup
-	hits    CoordsGroup
-	dead    bool
-}
-
-// @TODO: should sanitize any padding
-func SpaceshipFromPattern(pattern []string) (*Spaceship, error) {
-	// sanity check the input
-	if len(pattern) > ROWS {
-		return nil, errors.New("pattern too many rows")
-	}
-
-	// sanity check the input
-	for _, row := range pattern {
-		if len(row) > COLS {
-			return nil, errors.New("pattern too many cols")
-		}
-
-		// @TODO: is there a nicer way to do this with a builtin?
-		for _, char := range []byte(row) {
-			if char != byte(CoordsBlank) && char != byte(CoordsShip) {
-				return nil, errors.New("pattern incorrect symbol for coords")
-			}
-		}
-	}
-
-	spaceship := &Spaceship{
-		pattern: pattern,
-		hits:    make(CoordsGroup, 0),
-		dead:    false,
-	}
-
-	// parse the input
-	for y, row := range pattern {
-		for x, char := range []byte(row) {
-			coordsState := CoordsState(char)
-
-			switch coordsState {
-			case CoordsBlank:
-				// - nothing to do
-			case CoordsShip:
-				spaceship.coords = append(spaceship.coords, &Coords{x: uint8(x), y: uint8(y)})
-			}
-		}
-	}
-
-	if len(spaceship.coords) == 0 {
-		return nil, errors.New("blank spaceship")
-	}
-
-	return spaceship, nil
-}
-
-func (s *Spaceship) String() string {
-	return fmt.Sprintf("%s", strings.Join(s.pattern, "\n"))
 }

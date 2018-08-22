@@ -143,6 +143,15 @@ func (cg CoordsGroup) Contains(coords *Coords) bool {
 	return false
 }
 
+func (cg CoordsGroup) Copy() CoordsGroup {
+	newCg := make(CoordsGroup, len(cg))
+	for i, coords := range cg {
+		newCg[i] = &Coords{x: coords.x, y: coords.y}
+	}
+
+	return newCg
+}
+
 type ShotResult struct {
 	Coords     *Coords
 	ShotStatus ShotStatus

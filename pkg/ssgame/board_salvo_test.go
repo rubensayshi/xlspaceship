@@ -15,7 +15,7 @@ func NewBasicTestBoardWithSpaceship(assert *require.Assertions) *Board {
 	})
 	assert.NoError(err)
 
-	err = board.AddSpaceshipOnCoords(spaceship, 0, 0)
+	err = board.AddSpaceshipOnCoords(spaceship.CopyWithOffset(0, 0))
 	assert.NoError(err)
 
 	return board

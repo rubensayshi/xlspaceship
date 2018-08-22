@@ -79,11 +79,11 @@ func TestBoardToPatternWithShipsNoMarks(t *testing.T) {
 	bclass, _ := SpaceshipFromPattern(SpaceshipPatternBClass)
 	sclass, _ := SpaceshipFromPattern(SpaceshipPatternSClass)
 
-	assert.NoError(board.AddSpaceshipOnCoords(winger, 1, 0))
-	assert.NoError(board.AddSpaceshipOnCoords(angle, 10, 0))
-	assert.NoError(board.AddSpaceshipOnCoords(aclass, 1, 6))
-	assert.NoError(board.AddSpaceshipOnCoords(bclass, 10, 6))
-	assert.NoError(board.AddSpaceshipOnCoords(sclass, 1, 11))
+	assert.NoError(board.AddSpaceshipOnCoords(winger.CopyWithOffset(1, 0)))
+	assert.NoError(board.AddSpaceshipOnCoords(angle.CopyWithOffset(10, 0)))
+	assert.NoError(board.AddSpaceshipOnCoords(aclass.CopyWithOffset(1, 6)))
+	assert.NoError(board.AddSpaceshipOnCoords(bclass.CopyWithOffset(10, 6)))
+	assert.NoError(board.AddSpaceshipOnCoords(sclass.CopyWithOffset(1, 11)))
 
 	assert.Equal(expectedPattern, board.ToPattern())
 }
@@ -141,11 +141,11 @@ func TestBoardToPatternWithShipsAndMarks(t *testing.T) {
 	bclass, _ := SpaceshipFromPattern(SpaceshipPatternBClass)
 	sclass, _ := SpaceshipFromPattern(SpaceshipPatternSClass)
 
-	assert.NoError(board.AddSpaceshipOnCoords(winger, 1, 0))
-	assert.NoError(board.AddSpaceshipOnCoords(angle, 10, 0))
-	assert.NoError(board.AddSpaceshipOnCoords(aclass, 1, 6))
-	assert.NoError(board.AddSpaceshipOnCoords(bclass, 10, 6))
-	assert.NoError(board.AddSpaceshipOnCoords(sclass, 1, 11))
+	assert.NoError(board.AddSpaceshipOnCoords(winger.CopyWithOffset(1, 0)))
+	assert.NoError(board.AddSpaceshipOnCoords(angle.CopyWithOffset(10, 0)))
+	assert.NoError(board.AddSpaceshipOnCoords(aclass.CopyWithOffset(1, 6)))
+	assert.NoError(board.AddSpaceshipOnCoords(bclass.CopyWithOffset(10, 6)))
+	assert.NoError(board.AddSpaceshipOnCoords(sclass.CopyWithOffset(1, 11)))
 
 	assert.Equal(expectedPattern, board.ToPattern())
 }
