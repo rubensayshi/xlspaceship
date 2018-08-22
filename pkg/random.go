@@ -16,7 +16,7 @@ func RandomGameID() string {
 	return fmt.Sprintf("match-%d-%d", UUID, gameID)
 }
 
-func RandomFirstPlayer() Player {
+func RandomFirstPlayer() PlayerT {
 	if rand.Intn(1) == 0 {
 		return PlayerSelf
 	} else {

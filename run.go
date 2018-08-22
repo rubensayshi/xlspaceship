@@ -42,7 +42,7 @@ func main() {
 	fmt.Printf("main \n")
 	flag.Parse()
 
-	s := pkg.NewXLSpaceship(*fPlayerID)
+	s := pkg.NewXLSpaceship(*fPlayerID, "localhost", *fPort)
 
 	pkg.Serve(s, *fPort)
 }

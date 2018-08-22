@@ -1,12 +1,13 @@
 package pkg
 
 import (
-	"errors"
 	"fmt"
 	"math/rand"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
 func init() {
@@ -71,6 +72,19 @@ const (
 )
 
 type ShotStatus uint8
+
+func ShotStatusFromString(statusStr string) (ShotStatus, error) {
+	switch statusStr {
+	case ShotStatusMissStr:
+		return ShotStatusMiss, nil
+	case ShotStatusHitStr:
+		return ShotStatusHit, nil
+	case ShotStatusKillStr:
+		return ShotStatusKill, nil
+	default:
+		return ShotStatusMiss, errors.New("Invalid ShotStatus string")
+	}
+}
 
 func (c ShotStatus) String() string {
 	switch c {

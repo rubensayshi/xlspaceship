@@ -4,27 +4,30 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
+
+	"github.com/gorilla/mux"
 )
 
 func Serve(s *XLSpaceship, port int) {
-	mux := http.NewServeMux()
 
-	AddPingHandler(s, mux)
-	AddNewGameHandler(s, mux)
-	AddInitGameHandler(s, mux)
-	AddGameStatusHandler(s, mux)
-	AddReceiveSalvoHandler(s, mux)
+	r := mux.NewRouter()
+
+	AddPingHandler(s, r)
+	AddNewGameHandler(s, r)
+	AddInitGameHandler(s, r)
+	AddGameStatusHandler(s, r)
+	AddReceiveSalvoHandler(s, r)
+	AddFireSalvoHandler(s, r)
 
 	fmt.Printf("Serve :%d \n", port)
 
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", port), mux); err != nil {
+	if err := http.ListenAndServe(fmt.Sprintf(":%d", port), r); err != nil {
 		panic(err)
 	}
 }
 
-func AddPingHandler(s *XLSpaceship, mux *http.ServeMux) {
-	mux.HandleFunc(URI_PREFIX+"/protocol/ping", func(w http.ResponseWriter, r *http.Request) {
+func AddPingHandler(s *XLSpaceship, r *mux.Router) {
+	r.HandleFunc(URI_PREFIX+"/protocol/ping", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("%s \n", r.RequestURI)
 
 		w.WriteHeader(http.StatusOK)
@@ -32,8 +35,8 @@ func AddPingHandler(s *XLSpaceship, mux *http.ServeMux) {
 	})
 }
 
-func AddNewGameHandler(s *XLSpaceship, mux *http.ServeMux) {
-	mux.HandleFunc(URI_PREFIX+"/protocol/game/new", func(w http.ResponseWriter, r *http.Request) {
+func AddNewGameHandler(s *XLSpaceship, r *mux.Router) {
+	r.HandleFunc(URI_PREFIX+"/protocol/game/new", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("%s \n", r.RequestURI)
 
 		req := &NewGameRequest{}
@@ -43,6 +46,8 @@ func AddNewGameHandler(s *XLSpaceship, mux *http.ServeMux) {
 			w.Write([]byte("Bad JSON"))
 			return
 		}
+
+		fmt.Printf("%s: %s \n", r.RequestURI, req)
 
 		game, err := s.NewGame(req.UserID, req.FullName, req.SpaceshipProtocol.Hostname, req.SpaceshipProtocol.Port)
 		if err != nil {
@@ -67,8 +72,8 @@ func AddNewGameHandler(s *XLSpaceship, mux *http.ServeMux) {
 	})
 }
 
-func AddInitGameHandler(s *XLSpaceship, mux *http.ServeMux) {
-	mux.HandleFunc(URI_PREFIX+"/user/game/new", func(w http.ResponseWriter, r *http.Request) {
+func AddInitGameHandler(s *XLSpaceship, r *mux.Router) {
+	r.HandleFunc(URI_PREFIX+"/user/game/new", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("%s \n", r.RequestURI)
 
 		req := &InitGameRequest{}
@@ -95,19 +100,12 @@ func AddInitGameHandler(s *XLSpaceship, mux *http.ServeMux) {
 	})
 }
 
-func AddGameStatusHandler(s *XLSpaceship, mux *http.ServeMux) {
-	mux.HandleFunc(URI_PREFIX+"/user/game/", func(w http.ResponseWriter, r *http.Request) {
+func AddGameStatusHandler(s *XLSpaceship, r *mux.Router) {
+	r.HandleFunc(URI_PREFIX+"/user/game/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("%s \n", r.RequestURI)
 
-		// @TODO: abstract
-		uriChunks := strings.Split(r.RequestURI, "/")
-		gameID := uriChunks[len(uriChunks)-1]
-
-		// @TODO: is this possible?
-		if gameID == "game" {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
+		vars := mux.Vars(r)
+		gameID := vars["gameID"]
 
 		game, ok := s.games[gameID]
 		if !ok {
@@ -132,9 +130,12 @@ func AddGameStatusHandler(s *XLSpaceship, mux *http.ServeMux) {
 	})
 }
 
-func AddReceiveSalvoHandler(s *XLSpaceship, mux *http.ServeMux) {
-	mux.HandleFunc(URI_PREFIX+"/protocol/game/", func(w http.ResponseWriter, r *http.Request) {
+func AddFireSalvoHandler(s *XLSpaceship, r *mux.Router) {
+	r.HandleFunc(URI_PREFIX+"/user/game/{gameID}/fire", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("%s \n", r.RequestURI)
+
+		vars := mux.Vars(r)
+		gameID := vars["gameID"]
 
 		req := &ReceiveSalvoRequest{}
 		err := json.NewDecoder(r.Body).Decode(&req)
@@ -144,9 +145,92 @@ func AddReceiveSalvoHandler(s *XLSpaceship, mux *http.ServeMux) {
 			return
 		}
 
-		// @TODO: abstract
-		uriChunks := strings.Split(r.RequestURI, "/")
-		gameID := uriChunks[len(uriChunks)-1]
+		game, ok := s.games[gameID]
+		if !ok {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(fmt.Sprintf("Game not found")))
+			return
+		}
+
+		fmt.Printf("game:\n %s \n", game)
+
+		// parse salvo into coords
+		// @TODO: test for what happens when out of bounds
+		salvo := make(CoordsGroup, len(req.Salvo))
+		for i, coordsStr := range req.Salvo {
+			coords, err := CoordsFromString(coordsStr)
+			if err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write([]byte(fmt.Sprintf("Coords invalid")))
+				return
+			}
+
+			salvo[i] = coords
+		}
+
+		if game.Status == GameStatusInitializing {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(fmt.Sprintf("Game hasn't been started yet")))
+			return
+		}
+
+		// @TODO
+		if game.Status == GameStatusDone {
+			panic("done")
+		}
+
+		// @TODO: should we remove this check and rely on the response?
+		if game.PlayerTurn != PlayerSelf {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(fmt.Sprintf("Not your turn")))
+			return
+		}
+
+		salvoRes, err := s.FireSalvo(game, salvo)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(fmt.Sprintf("%s", err)))
+			return
+		}
+		game.PlayerTurn = PlayerOpponent
+
+		// @TODO
+		win := false
+		if win {
+			game.Status = GameStatusDone
+			game.PlayerWon = PlayerOpponent
+		}
+
+		fmt.Printf("game:\n %s \n", game)
+
+		res := ReceiveSalvoResponseFromSalvoResult(salvoRes, s, game)
+
+		resJson, err := json.MarshalIndent(res, "", "    ")
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(resJson)
+	})
+}
+
+func AddReceiveSalvoHandler(s *XLSpaceship, r *mux.Router) {
+	r.HandleFunc(URI_PREFIX+"/protocol/game/{gameID}", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("%s \n", r.RequestURI)
+
+		vars := mux.Vars(r)
+		gameID := vars["gameID"]
+
+		req := &ReceiveSalvoRequest{}
+		err := json.NewDecoder(r.Body).Decode(&req)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("Bad JSON"))
+			return
+		}
 
 		if gameID == "game" {
 			w.WriteHeader(http.StatusBadRequest)
@@ -216,7 +300,6 @@ func AddReceiveSalvoHandler(s *XLSpaceship, mux *http.ServeMux) {
 
 		win := true
 		for _, spaceship := range game.SelfBoard.spaceships {
-			fmt.Printf("spaceship dead? %v \n%s \n", spaceship.dead, spaceship.coords)
 			if !spaceship.dead {
 				win = false
 				break

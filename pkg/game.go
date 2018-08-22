@@ -19,9 +19,9 @@ const (
 	GameStatusDone         GameStatus = 2
 )
 
-type Player uint8
+type PlayerT uint8
 
-func (p Player) String() string {
+func (p PlayerT) String() string {
 	switch p {
 	case PlayerNone:
 		return "none"
@@ -35,22 +35,29 @@ func (p Player) String() string {
 }
 
 const (
-	PlayerNone     Player = 0
-	PlayerSelf     Player = 1
-	PlayerOpponent Player = 2
+	PlayerNone     PlayerT = 0
+	PlayerSelf     PlayerT = 1
+	PlayerOpponent PlayerT = 2
 )
 
-type Game struct {
-	GameID           string
-	OpponentPlayerID string
-	Status           GameStatus
-	SelfBoard        *Board
-	OpponentBoard    *Board
-	PlayerTurn       Player
-	PlayerWon        Player
+type Player struct {
+	PlayerID     string
+	FullName     string
+	ProtocolHost string
+	ProtocolPort int
 }
 
-func CreateNewGame(opponentPlayerID string) (*Game, error) {
+type Game struct {
+	GameID        string
+	Opponent      *Player
+	Status        GameStatus
+	SelfBoard     *Board
+	OpponentBoard *Board
+	PlayerTurn    PlayerT
+	PlayerWon     PlayerT
+}
+
+func CreateNewGame(opponent *Player) (*Game, error) {
 	selfBoard, err := NewRandomBoard()
 	if err != nil {
 		return nil, err
@@ -64,13 +71,13 @@ func CreateNewGame(opponentPlayerID string) (*Game, error) {
 	firstPlayer := RandomFirstPlayer()
 
 	game := &Game{
-		GameID:           RandomGameID(),
-		OpponentPlayerID: opponentPlayerID,
-		Status:           GameStatusInitializing,
-		SelfBoard:        selfBoard,
-		OpponentBoard:    opponentBoard,
-		PlayerTurn:       firstPlayer,
-		PlayerWon:        PlayerNone,
+		GameID:        RandomGameID(),
+		Opponent:      opponent,
+		Status:        GameStatusInitializing,
+		SelfBoard:     selfBoard,
+		OpponentBoard: opponentBoard,
+		PlayerTurn:    firstPlayer,
+		PlayerWon:     PlayerNone,
 	}
 
 	// start the game
@@ -79,7 +86,7 @@ func CreateNewGame(opponentPlayerID string) (*Game, error) {
 	return game, nil
 }
 
-func InitNewGame(gameID string, opponentPlayerID string, firstPlayer Player) (*Game, error) {
+func InitNewGame(gameID string, opponent *Player, firstPlayer PlayerT) (*Game, error) {
 	selfBoard, err := NewRandomBoard()
 	if err != nil {
 		return nil, err
@@ -91,13 +98,13 @@ func InitNewGame(gameID string, opponentPlayerID string, firstPlayer Player) (*G
 	}
 
 	game := &Game{
-		GameID:           gameID,
-		OpponentPlayerID: opponentPlayerID,
-		Status:           GameStatusInitializing,
-		SelfBoard:        selfBoard,
-		OpponentBoard:    opponentBoard,
-		PlayerTurn:       firstPlayer,
-		PlayerWon:        PlayerNone,
+		GameID:        gameID,
+		Opponent:      opponent,
+		Status:        GameStatusInitializing,
+		SelfBoard:     selfBoard,
+		OpponentBoard: opponentBoard,
+		PlayerTurn:    firstPlayer,
+		PlayerWon:     PlayerNone,
 	}
 
 	// start the game
@@ -112,5 +119,5 @@ func (g *Game) String() string {
 			"player-turn: %s\n"+
 			"self-board: \n%s\n"+
 			"opponent-board: \n%s\n",
-		g.OpponentPlayerID, g.PlayerTurn, g.SelfBoard, g.OpponentBoard)
+		g.Opponent.PlayerID, g.PlayerTurn, g.SelfBoard, g.OpponentBoard)
 }

@@ -26,14 +26,14 @@ type NewGameResponse struct {
 func NewGameResponseFromGame(s *XLSpaceship, game *Game) *NewGameResponse {
 	res := &NewGameResponse{}
 
-	res.UserID = s.PlayerID
-	res.FullName = s.PlayerName
+	res.UserID = s.Player.PlayerID
+	res.FullName = s.Player.FullName
 	res.GameID = game.GameID
 
 	if game.PlayerTurn == PlayerSelf {
-		res.Starting = s.PlayerID
+		res.Starting = s.Player.PlayerID
 	} else {
-		res.Starting = game.OpponentPlayerID
+		res.Starting = game.Opponent.PlayerID
 	}
 
 	return res
@@ -100,15 +100,15 @@ func ReceiveSalvoResponseFromSalvoResult(salvoResult []*ShotResult, s *XLSpacesh
 
 	if game.Status == GameStatusDone {
 		gameRes := ReceiveSalvoWonResponseGame{}
-		gameRes.Won = game.OpponentPlayerID
+		gameRes.Won = game.Opponent.PlayerID
 
 		res.Game = gameRes
 	} else {
 		gameRes := ReceiveSalvoResponseGame{}
 		if game.PlayerTurn == PlayerSelf {
-			gameRes.PlayerTurn = s.PlayerID
+			gameRes.PlayerTurn = s.Player.PlayerID
 		} else {
-			gameRes.PlayerTurn = game.OpponentPlayerID
+			gameRes.PlayerTurn = game.Opponent.PlayerID
 		}
 
 		res.Game = gameRes

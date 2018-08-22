@@ -9,20 +9,25 @@ import (
 
 	"math/rand"
 
+	"io"
+
 	"github.com/pkg/errors"
 )
 
 type XLSpaceship struct {
-	PlayerID   string
-	PlayerName string
-	games      map[string]*Game
+	Player *Player
+	games  map[string]*Game
 }
 
-func NewXLSpaceship(playerID string) *XLSpaceship {
+func NewXLSpaceship(playerID string, host string, port int) *XLSpaceship {
 	s := &XLSpaceship{
-		PlayerID:   playerID,
-		PlayerName: playerID,
-		games:      make(map[string]*Game),
+		Player: &Player{
+			PlayerID:     playerID,
+			FullName:     playerID,
+			ProtocolHost: host,
+			ProtocolPort: port,
+		},
+		games: make(map[string]*Game),
 	}
 
 	// make a random seed based on the playerID, that way it's deterministic but different per player
@@ -37,7 +42,14 @@ func NewXLSpaceship(playerID string) *XLSpaceship {
 }
 
 func (s *XLSpaceship) NewGame(opponentPlayerID string, opponentName string, opponentHost string, opponentPort int) (*Game, error) {
-	game, err := CreateNewGame(opponentPlayerID)
+	opponent := &Player{
+		PlayerID:     opponentPlayerID,
+		FullName:     opponentName,
+		ProtocolHost: opponentHost,
+		ProtocolPort: opponentPort,
+	}
+
+	game, err := CreateNewGame(opponent)
 	if err != nil {
 		return nil, err
 	}
@@ -49,9 +61,9 @@ func (s *XLSpaceship) NewGame(opponentPlayerID string, opponentName string, oppo
 
 func (s *XLSpaceship) InitNewGame(opponentHost string, opponentPort int) (*Game, error) {
 	req := NewGameRequest{
-		UserID:            s.PlayerID,
-		FullName:          s.PlayerName,
-		SpaceshipProtocol: GameRequestSpaceshipProtocol{},
+		UserID:            s.Player.PlayerID,
+		FullName:          s.Player.FullName,
+		SpaceshipProtocol: GameRequestSpaceshipProtocol{s.Player.ProtocolHost, s.Player.ProtocolPort},
 	}
 	reqJson, err := json.Marshal(req)
 	if err != nil {
@@ -62,7 +74,6 @@ func (s *XLSpaceship) InitNewGame(opponentHost string, opponentPort int) (*Game,
 	if err != nil || res.StatusCode != http.StatusCreated {
 		return nil, errors.Wrapf(err, "Failed to init game")
 	}
-
 	defer res.Body.Close()
 
 	newGameRes := &NewGameResponse{}
@@ -72,11 +83,18 @@ func (s *XLSpaceship) InitNewGame(opponentHost string, opponentPort int) (*Game,
 	}
 
 	firstPlayer := PlayerSelf
-	if newGameRes.Starting != s.PlayerID {
+	if newGameRes.Starting != s.Player.PlayerID {
 		firstPlayer = PlayerOpponent
 	}
 
-	game, err := InitNewGame(newGameRes.GameID, newGameRes.UserID, firstPlayer)
+	opponent := &Player{
+		PlayerID:     newGameRes.UserID,
+		FullName:     newGameRes.FullName,
+		ProtocolHost: opponentHost,
+		ProtocolPort: opponentPort,
+	}
+
+	game, err := InitNewGame(newGameRes.GameID, opponent, firstPlayer)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Failed to init game")
 	}
@@ -84,4 +102,59 @@ func (s *XLSpaceship) InitNewGame(opponentHost string, opponentPort int) (*Game,
 	s.games[game.GameID] = game
 
 	return game, nil
+}
+
+func (s *XLSpaceship) FireSalvo(game *Game, salvo CoordsGroup) ([]*ShotResult, error) {
+	req := ReceiveSalvoRequest{
+		Salvo: make([]string, len(salvo)),
+	}
+
+	for i, salvo := range salvo {
+		req.Salvo[i] = salvo.String()
+	}
+
+	reqJson, err := json.Marshal(req)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Failed to fire salvo")
+	}
+
+	res, err := Put(fmt.Sprintf("http://%s:%d/xl-spaceship/protocol/game/%s", game.Opponent.ProtocolHost, game.Opponent.ProtocolPort, game.GameID), "application/json", bytes.NewBuffer(reqJson))
+	if err != nil || res.StatusCode != http.StatusOK {
+		return nil, errors.Wrapf(err, "Failed to fire salvo")
+	}
+	defer res.Body.Close()
+
+	newGameRes := &ReceiveSalvoResponse{}
+	err = json.NewDecoder(res.Body).Decode(newGameRes)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Failed to fire salvo")
+	}
+
+	shotsRes := make([]*ShotResult, 0, len(newGameRes.Salvo))
+	for coordsStr, shotResStr := range newGameRes.Salvo {
+		coords, err := CoordsFromString(coordsStr)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Failed to fire salvo")
+		}
+
+		shotStatus, err := ShotStatusFromString(shotResStr)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Failed to fire salvo")
+		}
+
+		shotsRes = append(shotsRes, &ShotResult{coords, shotStatus})
+	}
+
+	game.PlayerTurn = PlayerOpponent
+
+	return shotsRes, nil
+}
+
+func Put(url string, contentType string, body io.Reader) (*http.Response, error) {
+	req, err := http.NewRequest("POST", url, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", contentType)
+	return http.DefaultClient.Do(req)
 }
