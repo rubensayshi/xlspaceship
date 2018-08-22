@@ -7,21 +7,26 @@ import (
 	"strings"
 )
 
-func Serve(s *XLSpaceship) {
+func Serve(s *XLSpaceship, port int) {
 	mux := http.NewServeMux()
 
 	AddPingHandler(s, mux)
 	AddNewGameHandler(s, mux)
+	AddInitGameHandler(s, mux)
 	AddGameStatusHandler(s, mux)
 	AddReceiveSalvoHandler(s, mux)
 
-	if err := http.ListenAndServe(fmt.Sprintf(":%s", DEFAULT_PORT), mux); err != nil {
+	fmt.Printf("Serve :%d \n", port)
+
+	if err := http.ListenAndServe(fmt.Sprintf(":%d", port), mux); err != nil {
 		panic(err)
 	}
 }
 
 func AddPingHandler(s *XLSpaceship, mux *http.ServeMux) {
 	mux.HandleFunc(URI_PREFIX+"/protocol/ping", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("%s \n", r.RequestURI)
+
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("pong"))
 	})
@@ -29,6 +34,8 @@ func AddPingHandler(s *XLSpaceship, mux *http.ServeMux) {
 
 func AddNewGameHandler(s *XLSpaceship, mux *http.ServeMux) {
 	mux.HandleFunc(URI_PREFIX+"/protocol/game/new", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("%s \n", r.RequestURI)
+
 		req := &NewGameRequest{}
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
@@ -44,7 +51,7 @@ func AddNewGameHandler(s *XLSpaceship, mux *http.ServeMux) {
 			return
 		}
 
-		fmt.Printf("new game:\n %s \n", game)
+		fmt.Printf("new game:\n%s \n", game)
 
 		res := NewGameResponseFromGame(s, game)
 
@@ -60,8 +67,38 @@ func AddNewGameHandler(s *XLSpaceship, mux *http.ServeMux) {
 	})
 }
 
+func AddInitGameHandler(s *XLSpaceship, mux *http.ServeMux) {
+	mux.HandleFunc(URI_PREFIX+"/user/game/new", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("%s \n", r.RequestURI)
+
+		req := &InitGameRequest{}
+		err := json.NewDecoder(r.Body).Decode(&req)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("Bad JSON"))
+			return
+		}
+
+		game, err := s.InitNewGame(req.SpaceshipProtocol.Hostname, req.SpaceshipProtocol.Port)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(fmt.Sprintf("Failed to init game: %s", err)))
+			return
+		}
+
+		fmt.Printf("init game:\n%s \n", game)
+
+		w.Header().Set("Content-Type", "text/html")
+		w.Header().Set("Location", fmt.Sprintf("/xl-spaceship/user/game/%s", game.GameID))
+		w.WriteHeader(http.StatusSeeOther)
+		w.Write([]byte(fmt.Sprintf("A new game has been created at xl-spaceship/user/game/%s", game.GameID)))
+	})
+}
+
 func AddGameStatusHandler(s *XLSpaceship, mux *http.ServeMux) {
 	mux.HandleFunc(URI_PREFIX+"/user/game/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("%s \n", r.RequestURI)
+
 		// @TODO: abstract
 		uriChunks := strings.Split(r.RequestURI, "/")
 		gameID := uriChunks[len(uriChunks)-1]
@@ -97,6 +134,8 @@ func AddGameStatusHandler(s *XLSpaceship, mux *http.ServeMux) {
 
 func AddReceiveSalvoHandler(s *XLSpaceship, mux *http.ServeMux) {
 	mux.HandleFunc(URI_PREFIX+"/protocol/game/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("%s \n", r.RequestURI)
+
 		req := &ReceiveSalvoRequest{}
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {

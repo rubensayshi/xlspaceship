@@ -9,7 +9,7 @@ import (
 func TestNewGame(t *testing.T) {
 	assert := require.New(t)
 
-	game, err := NewGame("player-1")
+	game, err := CreateNewGame("player-1")
 
 	assert.NoError(err)
 	assert.Equal("player-1", game.OpponentPlayerID)

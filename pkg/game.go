@@ -21,6 +21,19 @@ const (
 
 type Player uint8
 
+func (p Player) String() string {
+	switch p {
+	case PlayerNone:
+		return "none"
+	case PlayerSelf:
+		return "self"
+	case PlayerOpponent:
+		return "opponent"
+	}
+
+	panic("Unreachable")
+}
+
 const (
 	PlayerNone     Player = 0
 	PlayerSelf     Player = 1
@@ -37,7 +50,7 @@ type Game struct {
 	PlayerWon        Player
 }
 
-func NewGame(opponentPlayerID string) (*Game, error) {
+func CreateNewGame(opponentPlayerID string) (*Game, error) {
 	selfBoard, err := NewRandomBoard()
 	if err != nil {
 		return nil, err
@@ -49,7 +62,6 @@ func NewGame(opponentPlayerID string) (*Game, error) {
 	}
 
 	firstPlayer := RandomFirstPlayer()
-	firstPlayer = PlayerOpponent // @TODO: for debugging
 
 	game := &Game{
 		GameID:           RandomGameID(),
@@ -67,10 +79,38 @@ func NewGame(opponentPlayerID string) (*Game, error) {
 	return game, nil
 }
 
+func InitNewGame(gameID string, opponentPlayerID string, firstPlayer Player) (*Game, error) {
+	selfBoard, err := NewRandomBoard()
+	if err != nil {
+		return nil, err
+	}
+
+	opponentBoard, err := BoardFromPattern(BlankBoardPattern())
+	if err != nil {
+		return nil, err
+	}
+
+	game := &Game{
+		GameID:           gameID,
+		OpponentPlayerID: opponentPlayerID,
+		Status:           GameStatusInitializing,
+		SelfBoard:        selfBoard,
+		OpponentBoard:    opponentBoard,
+		PlayerTurn:       firstPlayer,
+		PlayerWon:        PlayerNone,
+	}
+
+	// start the game
+	game.Status = GameStatusOnGoing
+
+	return game, nil
+}
+
 func (g *Game) String() string {
 	return fmt.Sprintf(
 		"opponent: %s\n"+
+			"player-turn: %s\n"+
 			"self-board: \n%s\n"+
 			"opponent-board: \n%s\n",
-		g.OpponentPlayerID, g.SelfBoard, g.OpponentBoard)
+		g.OpponentPlayerID, g.PlayerTurn, g.SelfBoard, g.OpponentBoard)
 }
