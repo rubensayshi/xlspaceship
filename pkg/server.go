@@ -123,18 +123,6 @@ func AddReceiveSalvoHandler(s *XLSpaceship, mux *http.ServeMux) {
 
 		fmt.Printf("game:\n %s \n", game)
 
-		if game.Status != GameStatusOnGoing {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(fmt.Sprintf("Game already done")))
-			return
-		}
-
-		if game.PlayerTurn != PlayerOpponent {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(fmt.Sprintf("Not your turn")))
-			return
-		}
-
 		// parse salvo into coords
 		// @TODO: test for what happens when out of bounds
 		salvo := make(CoordsGroup, len(req.Salvo))
@@ -147,6 +135,41 @@ func AddReceiveSalvoHandler(s *XLSpaceship, mux *http.ServeMux) {
 			}
 
 			salvo[i] = coords
+		}
+
+		if game.Status == GameStatusInitializing {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(fmt.Sprintf("Game hasn't been started yet")))
+			return
+		}
+
+		if game.Status == GameStatusDone {
+			salvoRes := make([]*ShotResult, len(salvo))
+			for i, shot := range salvo {
+				salvoRes[i] = &ShotResult{
+					Coords:     shot,
+					ShotStatus: ShotStatusMiss,
+				}
+			}
+
+			res := ReceiveSalvoResponseFromSalvoResult(salvoRes, s, game)
+
+			resJson, err := json.MarshalIndent(res, "", "    ")
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusNotFound)
+			w.Write(resJson)
+			return
+		}
+
+		if game.PlayerTurn != PlayerOpponent {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(fmt.Sprintf("Not your turn")))
+			return
 		}
 
 		salvoRes := game.SelfBoard.ReceiveSalvo(salvo)
@@ -163,6 +186,7 @@ func AddReceiveSalvoHandler(s *XLSpaceship, mux *http.ServeMux) {
 
 		if win {
 			game.Status = GameStatusDone
+			game.PlayerWon = PlayerOpponent
 		}
 
 		fmt.Printf("game:\n %s \n", game)
