@@ -75,17 +75,21 @@ func main() {
 	fmt.Printf("XLSpaceship starting ... \n")
 	flag.Parse()
 
+	// init the main controller of the game
 	s := ssclient.NewXLSpaceship(*fPlayerID, *fPlayerName, "localhost", *fPort)
+	// enable cheat mode if configured
 	if *fCheat {
 		s.EnableCheatMode()
 	}
 
+	// create wg that will control when we exit
 	wg := &sync.WaitGroup{}
 
+	// serve the rest API
 	ssclient.Serve(s, *fPort, wg)
 
+	// open or print the gui URL
 	guiUrl := fmt.Sprintf("http://localhost:%d/gui/game.html", *fPort)
-
 	if !*fDontOpenGui {
 		fmt.Printf("Opening GUI in browser (if it does not open visit: %s", guiUrl)
 		go func() {

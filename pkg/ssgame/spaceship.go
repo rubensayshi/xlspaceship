@@ -14,6 +14,7 @@ type Spaceship struct {
 }
 
 // @TODO: should sanitize any padding
+// create a shapeship from a pattern
 func SpaceshipFromPattern(pattern []string) (*Spaceship, error) {
 	// sanity check the input
 	if len(pattern) > ROWS {
@@ -60,6 +61,7 @@ func SpaceshipFromPattern(pattern []string) (*Spaceship, error) {
 	return spaceship, nil
 }
 
+// make a copy of the spaceship instance (so we don't mutate the original)
 func (s *Spaceship) Copy() *Spaceship {
 	return &Spaceship{
 		coords: s.coords.Copy(),
@@ -68,23 +70,27 @@ func (s *Spaceship) Copy() *Spaceship {
 	}
 }
 
-func (s *Spaceship) CopyWithOffset(x int8, y int8) *Spaceship {
-	newS := s.Copy()
-	newS.Offset(x, y)
-
-	return newS
-}
-
-func (s *Spaceship) Offset(x int8, y int8) {
+func (s *Spaceship) offset(x int8, y int8) {
 	for _, coords := range s.coords {
 		coords.x += x
 		coords.y += y
 	}
 }
 
-func (s *Spaceship) Rotate(rotate uint16) error {
+// make a copy of the spaceship instance and give it an offset (so we don't mutate the original)
+func (s *Spaceship) CopyWithOffset(x int8, y int8) *Spaceship {
+	newS := s.Copy()
+	newS.offset(x, y)
+
+	return newS
+}
+
+// rotate the spaceship 90, 180 or 270 degrees
+func (s *Spaceship) rotate(rotate uint16) error {
 	// rotate coords
 	switch rotate {
+	case 0:
+		// nothing to do
 	case 90:
 		for _, coords := range s.coords {
 			coords.x, coords.y = coords.y*-1, coords.x
@@ -122,6 +128,15 @@ func (s *Spaceship) Rotate(rotate uint16) error {
 	return nil
 }
 
+// make a copy of the spaceship instance and give it an offset (so we don't mutate the original)
+func (s *Spaceship) CopyWithRotate(rotate uint16) *Spaceship {
+	newS := s.Copy()
+	newS.rotate(rotate)
+
+	return newS
+}
+
+// turn the spaceship back into a pattern (currently only used for tests and debugging)
 func (s *Spaceship) ToPattern() []string {
 	var maxX int8 = 0
 	var maxY int8 = 0

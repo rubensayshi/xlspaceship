@@ -1,5 +1,8 @@
 package ssgame
 
+// this file contains the spaceship patterns
+//  and the set of spaceships used for a game
+
 var SpaceshipPatternWinger = []string{
 	"*.*",
 	"*.*",

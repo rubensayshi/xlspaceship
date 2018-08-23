@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// helper function for a blank board
 func BlankBoardPattern() []string {
 	return []string{
 		"................",
@@ -29,23 +30,27 @@ func BlankBoardPattern() []string {
 	}
 }
 
+// the base type for our baords to share
 type BaseBoard struct {
 	hits   CoordsGroup
 	misses CoordsGroup
 }
 
+// our own board which contains our own placed shaceships
 type SelfBoard struct {
 	*BaseBoard
 	spaceships []*Spaceship
 }
 
+// our opponent's board for which we don't know his spaceships, we do know how many there are left alive
 type OpponentBoard struct {
 	*BaseBoard
 	spaceshipsAlive uint8
 }
 
+// generate a random board for ourselves with the specified spaceships
+//  we retry to create a random board 100 times incase the spaceships didn't fit
 func NewRandomSelfBoard(spaceships [][]string) (*SelfBoard, error) {
-	// we retry to create a random board 100 times incase the spaceships didn't fit (should never happen with default board size and spaceships)
 	for i := 0; i < 100; i++ {
 		board, err := newRandomSelfBoard(spaceships)
 		if err != nil {
@@ -60,6 +65,9 @@ func NewRandomSelfBoard(spaceships [][]string) (*SelfBoard, error) {
 	return nil, errors.New("Failed to create a random board")
 }
 
+// generate a random board for ourselves with the specified spaceships
+//  internal function for NewRandomSelfBoard to use
+// board can be nil when we failed to place a spaceship
 func newRandomSelfBoard(spaceships [][]string) (*SelfBoard, error) {
 	board, err := NewBlankSelfBoard()
 	if err != nil {
@@ -126,6 +134,7 @@ func NewBlankOpponentBoard(spaceshipsAlive uint8) (*OpponentBoard, error) {
 	return board, nil
 }
 
+// fill a board with a pattern
 func FillBoardFromPattern(board *BaseBoard, pattern []string) error {
 	// sanity check the input
 	if len(pattern) != ROWS {
@@ -227,21 +236,18 @@ func (b *SelfBoard) ToPattern() []string {
 	return b.patternToStrings(pattern)
 }
 
+// attempt to add a spaceship on random locations until we succeed
+//  if we reach the max N attempts then just error out
 func (b *SelfBoard) AddSpaceship(spaceship *Spaceship) error {
 	N := 10000
-	// we'll attempt to add the spaceship on random locations until we succeed to reach N
 	// @TODO: this could be heavily optimized as we know we don't have to try adding a spaceship of 3 high on Y > 15 - 3
 	for i := 0; i < N; i++ {
+		// randomize x, y offset and rotation
 		x := rand.Intn(COLS)
 		y := rand.Intn(ROWS)
-
-		newSpaceship := spaceship.CopyWithOffset(int8(x), int8(y))
-
-		// rotate degrees
 		rotate := rand.Intn(3) * 90
-		if rotate != 0 {
-			newSpaceship.Rotate(uint16(rotate))
-		}
+
+		newSpaceship := spaceship.CopyWithOffset(int8(x), int8(y)).CopyWithRotate(uint16(rotate))
 
 		err := b.AddSpaceshipOnCoords(newSpaceship)
 		// we're done if no err
@@ -253,6 +259,8 @@ func (b *SelfBoard) AddSpaceship(spaceship *Spaceship) error {
 	return errors.New("Failed to add spaceship, seems impossible")
 }
 
+// add a spaceship on specified locations
+//  will error when it's out of bound or overlapping with an existing spaceship
 func (b *SelfBoard) AddSpaceshipOnCoords(spaceship *Spaceship) error {
 	// @TODO: we should store coords of existing spaceships so we don't have to loop over them
 	for _, coords := range spaceship.coords {
@@ -278,6 +286,7 @@ func (b *SelfBoard) AddSpaceshipOnCoords(spaceship *Spaceship) error {
 	return nil
 }
 
+// receive a salvo onto our board
 func (b *SelfBoard) ReceiveSalvo(salvo CoordsGroup) []*ShotResult {
 	res := make([]*ShotResult, len(salvo))
 	for i, shot := range salvo {
@@ -287,6 +296,7 @@ func (b *SelfBoard) ReceiveSalvo(salvo CoordsGroup) []*ShotResult {
 	return res
 }
 
+// apply a shot to our board
 func (b *SelfBoard) ApplyShot(shot *Coords) *ShotResult {
 	// @TODO: same as with AddSpacehipOnCoords it would be a good optimization to store the coords of the ships so we don't have to loop over them
 	status := ShotStatusMiss
@@ -325,6 +335,7 @@ func (b *SelfBoard) ApplyShot(shot *Coords) *ShotResult {
 	return res
 }
 
+// apply one of our shots to opponent's board using the status our opponent told us of the shot
 func (b *OpponentBoard) ApplyShotStatus(shot *Coords, status ShotStatus) {
 	switch status {
 	case ShotStatusMiss:

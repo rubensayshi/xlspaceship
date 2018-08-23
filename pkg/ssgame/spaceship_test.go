@@ -171,7 +171,7 @@ func TestSpaceship_RotateSimple90(t *testing.T) {
 
 	assert.Equal([]string{"***"}, spaceship.ToPattern())
 
-	spaceship.Rotate(90)
+	spaceship.rotate(90)
 
 	assert.Equal([]string{
 		"*",
@@ -187,7 +187,7 @@ func TestSpaceship_RotateSclass90(t *testing.T) {
 	assert.NoError(err)
 	assert.NotNil(spaceship)
 
-	spaceship.Rotate(90)
+	spaceship.rotate(90)
 
 	assert.Equal([]string{
 		"...*",
@@ -209,7 +209,7 @@ func TestSpaceship_RotateSimple180(t *testing.T) {
 
 	assert.Equal([]string{"***"}, spaceship.ToPattern())
 
-	spaceship.Rotate(180)
+	spaceship.rotate(180)
 
 	assert.Equal([]string{
 		"***",
@@ -222,7 +222,7 @@ func TestSpaceship_RotateSclass180(t *testing.T) {
 	spaceship, err := SpaceshipFromPattern(SpaceshipPatternSClass)
 	assert.NoError(err)
 
-	spaceship.Rotate(180)
+	spaceship.rotate(180)
 
 	assert.Equal([]string{
 		".**",
@@ -245,7 +245,7 @@ func TestSpaceship_RotateSimple270(t *testing.T) {
 
 	assert.Equal([]string{"***"}, spaceship.ToPattern())
 
-	spaceship.Rotate(270)
+	spaceship.rotate(270)
 
 	assert.Equal([]string{
 		"*",
@@ -261,7 +261,7 @@ func TestSpaceship_RotateSclass270(t *testing.T) {
 	assert.NoError(err)
 	assert.NotNil(spaceship)
 
-	spaceship.Rotate(270)
+	spaceship.rotate(270)
 
 	assert.Equal([]string{
 		"...*",

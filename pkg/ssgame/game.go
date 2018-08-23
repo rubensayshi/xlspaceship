@@ -6,11 +6,15 @@ import (
 )
 
 func init() {
-	// this should be replaced by crypto/rand with proper seeding for secure random numbers
-	//  but for this exercise it's much nicer if it's not really random
+	// give us a "random seed"
 	rand.Seed(1)
+
+	// this would be the proper way
+	//  but for serious things (eg a casino game, crypto, etc) crypto/rand should be used instead of math/rand
+	// rand.Seed(time.Now().UTC().UnixNano())
 }
 
+// define the status a game can have as a type
 type GameStatus int8
 
 const (
@@ -18,9 +22,10 @@ const (
 	GameStatusDone    GameStatus = 1
 )
 
-type PlayerT int8
+// the type we use to indicate which player's turn it is or which player won etc
+type WhichPlayer int8
 
-func (p PlayerT) String() string {
+func (p WhichPlayer) String() string {
 	switch p {
 	case PlayerNone:
 		return "none"
@@ -34,11 +39,12 @@ func (p PlayerT) String() string {
 }
 
 const (
-	PlayerNone     PlayerT = 0
-	PlayerSelf     PlayerT = 1
-	PlayerOpponent PlayerT = 2
+	PlayerNone     WhichPlayer = 0
+	PlayerSelf     WhichPlayer = 1
+	PlayerOpponent WhichPlayer = 2
 )
 
+// the type we use to store a player (both self and opponent)
 type Player struct {
 	PlayerID     string
 	FullName     string
@@ -46,27 +52,32 @@ type Player struct {
 	ProtocolPort int
 }
 
+// the type to hold a game between 2 players
 type Game struct {
 	GameID        string
 	Opponent      *Player
 	Status        GameStatus
 	SelfBoard     *SelfBoard
 	OpponentBoard *OpponentBoard
-	PlayerTurn    PlayerT
-	PlayerWon     PlayerT
+	PlayerTurn    WhichPlayer
+	PlayerWon     WhichPlayer
 }
 
+// create a new game with a random board for self and a blank board for opponent
 func CreateNewGame(opponent *Player) (*Game, error) {
+	// give ourselves a random board
 	selfBoard, err := NewRandomSelfBoard(SpaceshipsSetForBaseGame)
 	if err != nil {
 		return nil, err
 	}
 
+	// give our opponent a blank board
 	opponentBoard, err := NewBlankOpponentBoard(uint8(len(SpaceshipsSetForBaseGame)))
 	if err != nil {
 		return nil, err
 	}
 
+	// determine which player get's to go first
 	firstPlayer := RandomFirstPlayer()
 
 	game := &Game{
@@ -82,12 +93,15 @@ func CreateNewGame(opponent *Player) (*Game, error) {
 	return game, nil
 }
 
-func InitNewGame(gameID string, opponent *Player, firstPlayer PlayerT) (*Game, error) {
+// init a new game that we were challanged to play
+func InitNewGame(gameID string, opponent *Player, firstPlayer WhichPlayer) (*Game, error) {
+	// give ourselves a random board
 	selfBoard, err := NewRandomSelfBoard(SpaceshipsSetForBaseGame)
 	if err != nil {
 		return nil, err
 	}
 
+	// give our opponent a blank board
 	opponentBoard, err := NewBlankOpponentBoard(uint8(len(SpaceshipsSetForBaseGame)))
 	if err != nil {
 		return nil, err

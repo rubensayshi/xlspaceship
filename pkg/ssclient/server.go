@@ -24,6 +24,7 @@ func Serve(s *XLSpaceship, port int, wg *sync.WaitGroup) {
 	AddReceiveSalvoHandler(s, r)
 	AddFireSalvoHandler(s, r)
 
+	// add static file handler
 	ServeAddStaticHandler(r)
 
 	// start serving

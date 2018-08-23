@@ -30,8 +30,8 @@ func NewXLSpaceship(playerID string, playerName string, host string, port int) *
 		requester: &HttpRequester{},
 	}
 
-	// make a random seed based on the playerID, that way it's deterministic but different per player
-	//  this is purely for easy debugging
+	// make a seed based on the playerID, that way it's deterministic but different per player
+	//  this is purely for easy debugging because this way every time we restart the game all random things will be the same
 	var seed int64 = 0
 	for _, char := range playerID {
 		seed += int64(char)
@@ -45,6 +45,7 @@ func (xl *XLSpaceship) EnableCheatMode() {
 	xl.cheat = true
 }
 
+// handle a NewGameRequest from another player
 func (xl *XLSpaceship) NewGame(req *NewGameRequest) (*NewGameResponse, error) {
 	opponent := &ssgame.Player{
 		PlayerID:     req.UserID,
@@ -64,6 +65,7 @@ func (xl *XLSpaceship) NewGame(req *NewGameRequest) (*NewGameResponse, error) {
 	return res, nil
 }
 
+// send a NewGameRequest to another player
 func (xl *XLSpaceship) InitNewGame(req *InitGameRequest) (string, error) {
 	newGameReq := &NewGameRequest{
 		UserID:            xl.Player.PlayerID,
@@ -98,6 +100,7 @@ func (xl *XLSpaceship) InitNewGame(req *InitGameRequest) (string, error) {
 	return game.GameID, nil
 }
 
+// retrieve the GameStatusResponse for a game
 func (xl *XLSpaceship) GameStatus(gameID string) (*GameStatusResponse, bool) {
 	game, ok := xl.games[gameID]
 	if !ok {
@@ -109,6 +112,7 @@ func (xl *XLSpaceship) GameStatus(gameID string) (*GameStatusResponse, bool) {
 	return res, true
 }
 
+// send a salvo to another player
 func (xl *XLSpaceship) FireSalvo(game *ssgame.Game, salvo ssgame.CoordsGroup) (*SalvoResponse, bool, error) {
 	// check that we're not cheating
 	if !xl.cheat && len(salvo) > game.SelfBoard.CountShipsAlive() {
@@ -169,6 +173,7 @@ func (xl *XLSpaceship) FireSalvo(game *ssgame.Game, salvo ssgame.CoordsGroup) (*
 	return ReceiveSalvoResponseFromSalvoResult(salvoRes, xl, game), false, nil
 }
 
+// build a SalvoResponse for when a game is already finished
 func (xl *XLSpaceship) FireSalvoGameFinished(game *ssgame.Game, salvo ssgame.CoordsGroup) (*SalvoResponse, error) {
 	salvoRes := make([]*ssgame.ShotResult, len(salvo))
 	for i, shot := range salvo {
@@ -181,6 +186,7 @@ func (xl *XLSpaceship) FireSalvoGameFinished(game *ssgame.Game, salvo ssgame.Coo
 	return ReceiveSalvoResponseFromSalvoResult(salvoRes, xl, game), nil
 }
 
+// receive a salvo from another player
 func (xl *XLSpaceship) ReceiveSalvo(game *ssgame.Game, salvo ssgame.CoordsGroup) (*SalvoResponse, bool, error) {
 	// check that we're not cheating
 	if !xl.cheat && len(salvo) > game.OpponentBoard.CountShipsAlive() {
@@ -208,6 +214,7 @@ func (xl *XLSpaceship) ReceiveSalvo(game *ssgame.Game, salvo ssgame.CoordsGroup)
 	return ReceiveSalvoResponseFromSalvoResult(salvoRes, xl, game), false, nil
 }
 
+// build a SalvoResponse for when a game is already finished
 func (xl *XLSpaceship) ReceiveSalvoGameFinished(game *ssgame.Game, salvo ssgame.CoordsGroup) (*SalvoResponse, error) {
 	salvoRes := make([]*ssgame.ShotResult, len(salvo))
 	for i, shot := range salvo {
