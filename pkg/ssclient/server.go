@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/rakyll/statik/fs"
 	"github.com/rubensayshi/xlspaceship/pkg/ssgame"
 
 	"time"
@@ -27,14 +26,7 @@ func Serve(s *XLSpaceship, openGUI bool, port int) {
 	AddReceiveSalvoHandler(s, r)
 	AddFireSalvoHandler(s, r)
 
-	// open statik bundle of our static files
-	statikFS, err := fs.New()
-	if err != nil {
-		panic(err)
-	}
-
-	// add file server for statik
-	r.PathPrefix("/gui/").Handler(http.StripPrefix("/gui/", http.FileServer(statikFS)))
+	ServeAddStaticHandler(r)
 
 	wg := sync.WaitGroup{}
 

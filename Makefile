@@ -25,9 +25,9 @@ build-gui-statik:
 build: build-gui build-gui-statik build-linux build-windows
 
 build-windows:
-	 GOOS=windows GOARCH=amd64 go build -o bin/xlspaceship-win64.exe main.go
-	 GOOS=windows GOARCH=386 go build -o bin/xlspaceship-win386.exe main.go
+	 GOOS=windows GOARCH=amd64 go build -tags statik -o bin/xlspaceship-win64.exe main.go
+	 GOOS=windows GOARCH=386 go build -tags statik -o bin/xlspaceship-win386.exe main.go
 
 build-linux:
-	 GOOS=linux GOARCH=amd64 go build -o bin/xlspaceship-linux64 main.go
-	 GOOS=linux GOARCH=386 go build -o bin/xlspaceship-linux386 main.go
+	 GOOS=linux GOARCH=amd64 go build -tags statik -o bin/xlspaceship-linux64 main.go
+	 GOOS=linux GOARCH=386 go build -tags statik -o bin/xlspaceship-linux386 main.go
