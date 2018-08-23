@@ -109,10 +109,20 @@ func (s *XLSpaceship) GameStatus(gameID string) (*GameStatusResponse, bool) {
 	return res, true
 }
 
-func (s *XLSpaceship) FireSalvo(game *ssgame.Game, salvo ssgame.CoordsGroup) (*SalvoResponse, error) {
+func (s *XLSpaceship) FireSalvo(game *ssgame.Game, salvo ssgame.CoordsGroup) (*SalvoResponse, bool, error) {
 	// check that we're not cheating
 	if !s.cheat && len(salvo) > game.SelfBoard.CountShipsAlive() {
-		return nil, errors.Errorf("More shots than ships alive (%d)", game.SelfBoard.CountShipsAlive())
+		return nil, false, errors.Errorf("More shots than ships alive (%d)", game.SelfBoard.CountShipsAlive())
+	}
+
+	// if the game is already done then we create a mock response with misses
+	if game.Status == ssgame.GameStatusDone {
+		res, err := s.FireSalvoGameFinished(game, salvo)
+		if err != nil {
+			return nil, false, errors.Wrapf(err, "Failed to fire salvo")
+		}
+
+		return res, true, nil
 	}
 
 	req := &ReceiveSalvoRequest{
@@ -128,7 +138,7 @@ func (s *XLSpaceship) FireSalvo(game *ssgame.Game, salvo ssgame.CoordsGroup) (*S
 		Port:     game.Opponent.ProtocolPort,
 	}, game.GameID, req)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Failed to fire salvo (req)")
+		return nil, false, errors.Wrapf(err, "Failed to fire salvo (req)")
 	}
 
 	// mark result on our end
@@ -136,12 +146,12 @@ func (s *XLSpaceship) FireSalvo(game *ssgame.Game, salvo ssgame.CoordsGroup) (*S
 	for coordsStr, shotResStr := range res.Salvo {
 		coords, err := ssgame.CoordsFromString(coordsStr)
 		if err != nil {
-			return nil, errors.Wrapf(err, "Failed to fire salvo")
+			return nil, false, errors.Wrapf(err, "Failed to fire salvo")
 		}
 
 		shotStatus, err := ssgame.ShotStatusFromString(shotResStr)
 		if err != nil {
-			return nil, errors.Wrapf(err, "Failed to fire salvo")
+			return nil, false, errors.Wrapf(err, "Failed to fire salvo")
 		}
 
 		salvoRes = append(salvoRes, &ssgame.ShotResult{coords, shotStatus})
@@ -156,13 +166,35 @@ func (s *XLSpaceship) FireSalvo(game *ssgame.Game, salvo ssgame.CoordsGroup) (*S
 		game.PlayerWon = ssgame.PlayerSelf
 	}
 
+	return ReceiveSalvoResponseFromSalvoResult(salvoRes, s, game), false, nil
+}
+
+func (s *XLSpaceship) FireSalvoGameFinished(game *ssgame.Game, salvo ssgame.CoordsGroup) (*SalvoResponse, error) {
+	salvoRes := make([]*ssgame.ShotResult, len(salvo))
+	for i, shot := range salvo {
+		salvoRes[i] = &ssgame.ShotResult{
+			Coords:     shot,
+			ShotStatus: ssgame.ShotStatusMiss,
+		}
+	}
+
 	return ReceiveSalvoResponseFromSalvoResult(salvoRes, s, game), nil
 }
 
-func (s *XLSpaceship) ReceiveSalvo(game *ssgame.Game, salvo ssgame.CoordsGroup) (*SalvoResponse, error) {
+func (s *XLSpaceship) ReceiveSalvo(game *ssgame.Game, salvo ssgame.CoordsGroup) (*SalvoResponse, bool, error) {
 	// check that we're not cheating
 	if !s.cheat && len(salvo) > game.OpponentBoard.CountShipsAlive() {
-		return nil, errors.Errorf("More shots than ships alive (%d)", game.OpponentBoard.CountShipsAlive())
+		return nil, false, errors.Errorf("More shots than ships alive (%d)", game.OpponentBoard.CountShipsAlive())
+	}
+
+	// if the game is already done then we create a mock response with misses
+	if game.Status == ssgame.GameStatusDone {
+		res, err := s.ReceiveSalvoGameFinished(game, salvo)
+		if err != nil {
+			return nil, false, errors.Wrapf(err, "Failed to fire salvo")
+		}
+
+		return res, true, nil
 	}
 
 	salvoRes := game.SelfBoard.ReceiveSalvo(salvo)
@@ -171,6 +203,18 @@ func (s *XLSpaceship) ReceiveSalvo(game *ssgame.Game, salvo ssgame.CoordsGroup) 
 	if game.SelfBoard.AllShipsDead() {
 		game.Status = ssgame.GameStatusDone
 		game.PlayerWon = ssgame.PlayerOpponent
+	}
+
+	return ReceiveSalvoResponseFromSalvoResult(salvoRes, s, game), false, nil
+}
+
+func (s *XLSpaceship) ReceiveSalvoGameFinished(game *ssgame.Game, salvo ssgame.CoordsGroup) (*SalvoResponse, error) {
+	salvoRes := make([]*ssgame.ShotResult, len(salvo))
+	for i, shot := range salvo {
+		salvoRes[i] = &ssgame.ShotResult{
+			Coords:     shot,
+			ShotStatus: ssgame.ShotStatusMiss,
+		}
 	}
 
 	return ReceiveSalvoResponseFromSalvoResult(salvoRes, s, game), nil

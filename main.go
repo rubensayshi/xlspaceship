@@ -60,8 +60,7 @@ func maybeGetEnv(env string, dflt string) string {
 	return val
 }
 
-// @TODO: DEFAULT -> SEE DOC
-var fPort = flag.Int("port", maybeGetEnvInt("PORT", 8000), "port to serve the REST API on")
+var fPort = flag.Int("port", maybeGetEnvInt("PORT", 8080), "port to serve the REST API on")
 var fPlayerID = flag.String("playerID", maybeGetEnv("PLAYERID", "player-1"), "your player ID")
 var fPlayerName = flag.String("playerName", maybeGetEnv("PLAYERNAME", "Player 1"), "your player name")
 var fCheat = flag.Bool("cheat", maybeGetEnvBool("CHEAT", false), "enable cheat mode")

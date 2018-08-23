@@ -132,7 +132,6 @@ func AddFireSalvoHandler(s *XLSpaceship, r *mux.Router) {
 		}
 
 		// parse salvo into coords
-		// @TODO: test for what happens when out of bounds
 		salvo, err := ssgame.CoordsGroupFromSalvoStrings(req.Salvo)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -140,13 +139,8 @@ func AddFireSalvoHandler(s *XLSpaceship, r *mux.Router) {
 			return
 		}
 
-		// @TODO
-		if game.Status == ssgame.GameStatusDone {
-			panic("done")
-		}
-
 		// fire off the salvo
-		res, err := s.FireSalvo(game, salvo)
+		res, alreadyFinished, err := s.FireSalvo(game, salvo)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(fmt.Sprintf("%s", err)))
@@ -160,7 +154,11 @@ func AddFireSalvoHandler(s *XLSpaceship, r *mux.Router) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
+		if alreadyFinished {
+			w.WriteHeader(http.StatusNotFound)
+		} else {
+			w.WriteHeader(http.StatusOK)
+		}
 		w.Write(resJson)
 	})
 }
@@ -189,35 +187,10 @@ func AddReceiveSalvoHandler(s *XLSpaceship, r *mux.Router) {
 		}
 
 		// parse salvo into coords
-		// @TODO: test for what happens when out of bounds
 		salvo, err := ssgame.CoordsGroupFromSalvoStrings(req.Salvo)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(fmt.Sprintf("Coords invalid")))
-			return
-		}
-
-		// if the game is already done then we create a mock response with misses
-		if game.Status == ssgame.GameStatusDone {
-			salvoRes := make([]*ssgame.ShotResult, len(salvo))
-			for i, shot := range salvo {
-				salvoRes[i] = &ssgame.ShotResult{
-					Coords:     shot,
-					ShotStatus: ssgame.ShotStatusMiss,
-				}
-			}
-
-			res := ReceiveSalvoResponseFromSalvoResult(salvoRes, s, game)
-
-			resJson, err := json.MarshalIndent(res, "", "    ")
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusNotFound)
-			w.Write(resJson)
 			return
 		}
 
@@ -229,7 +202,7 @@ func AddReceiveSalvoHandler(s *XLSpaceship, r *mux.Router) {
 		}
 
 		// process the incoming salvo
-		res, err := s.ReceiveSalvo(game, salvo)
+		res, alreadyFinished, err := s.ReceiveSalvo(game, salvo)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(fmt.Sprintf("Failed to receive salvo")))
@@ -242,7 +215,11 @@ func AddReceiveSalvoHandler(s *XLSpaceship, r *mux.Router) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
+		if alreadyFinished {
+			w.WriteHeader(http.StatusNotFound)
+		} else {
+			w.WriteHeader(http.StatusOK)
+		}
 		w.Write(resJson)
 	})
 }
