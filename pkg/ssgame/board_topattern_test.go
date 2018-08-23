@@ -30,7 +30,7 @@ func TestBoard_ToPatternBoard(t *testing.T) {
 		"...............-",
 	}
 
-	board := NewOpponentBoard()
+	board := NewSelfBoard()
 	err := FillBoardFromPattern(board.BaseBoard, pattern)
 	assert.NoError(err)
 	assert.NotNil(board)

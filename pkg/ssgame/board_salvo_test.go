@@ -98,7 +98,7 @@ func TestBoard_ApplyShotKillTwice(t *testing.T) {
 func TestBoard_ApplyShotStatus(t *testing.T) {
 	assert := require.New(t)
 
-	board, err := NewBlankOpponentBoard()
+	board, err := NewBlankOpponentBoard(1)
 	assert.NoError(err)
 
 	board.ApplyShotStatus(&Coords{2, 0}, ShotStatusHit)
@@ -122,4 +122,36 @@ func TestBoard_ApplyShotStatus(t *testing.T) {
 		"................",
 		"................",
 	}, board.ToPattern())
+}
+
+func TestBoard_ApplyShotStatusKill(t *testing.T) {
+	assert := require.New(t)
+
+	board, err := NewBlankOpponentBoard(1)
+	assert.NoError(err)
+
+	board.ApplyShotStatus(&Coords{2, 0}, ShotStatusKill)
+
+	assert.Equal([]string{
+		"..X.............",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+	}, board.ToPattern())
+
+	assert.Equal(uint8(0), board.spaceshipsAlive)
+	assert.Equal(0, board.CountShipsAlive())
+	assert.Equal(true, board.AllShipsDead())
 }

@@ -4,5 +4,5 @@ test-game:
 	go test -v github.com/rubensayshi/xlspaceship/pkg/ssgame
 
 test-client:
-	go test -v github.com/rubensayshi/xlspaceship/pkg/ssgame
+	go test -v github.com/rubensayshi/xlspaceship/pkg/ssclient
 

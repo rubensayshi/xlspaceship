@@ -62,7 +62,7 @@ func CreateNewGame(opponent *Player) (*Game, error) {
 		return nil, err
 	}
 
-	opponentBoard, err := NewBlankOpponentBoard()
+	opponentBoard, err := NewBlankOpponentBoard(uint8(len(SpaceshipsSetForBaseGame)))
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +88,7 @@ func InitNewGame(gameID string, opponent *Player, firstPlayer PlayerT) (*Game, e
 		return nil, err
 	}
 
-	opponentBoard, err := NewBlankOpponentBoard()
+	opponentBoard, err := NewBlankOpponentBoard(uint8(len(SpaceshipsSetForBaseGame)))
 	if err != nil {
 		return nil, err
 	}

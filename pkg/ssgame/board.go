@@ -41,6 +41,7 @@ type SelfBoard struct {
 
 type OpponentBoard struct {
 	*BaseBoard
+	spaceshipsAlive uint8
 }
 
 func NewRandomSelfBoard(spaceships [][]string) (*SelfBoard, error) {
@@ -107,14 +108,15 @@ func NewBlankSelfBoard() (*SelfBoard, error) {
 	return board, nil
 }
 
-func NewOpponentBoard() *OpponentBoard {
+func NewOpponentBoard(spaceshipsAlive uint8) *OpponentBoard {
 	return &OpponentBoard{
-		BaseBoard: newBaseBoard(),
+		BaseBoard:       newBaseBoard(),
+		spaceshipsAlive: spaceshipsAlive,
 	}
 }
 
-func NewBlankOpponentBoard() (*OpponentBoard, error) {
-	board := NewOpponentBoard()
+func NewBlankOpponentBoard(spaceshipsAlive uint8) (*OpponentBoard, error) {
+	board := NewOpponentBoard(spaceshipsAlive)
 
 	err := FillBoardFromPattern(board.BaseBoard, BlankBoardPattern())
 	if err != nil {
@@ -163,33 +165,6 @@ func FillBoardFromPattern(board *BaseBoard, pattern []string) error {
 	}
 
 	return nil
-}
-
-func (b *OpponentBoard) String() string {
-	return fmt.Sprintf("%s", strings.Join(b.ToPattern(), "\n"))
-}
-
-func (b *SelfBoard) String() string {
-	return fmt.Sprintf("%s", strings.Join(b.ToPattern(), "\n"))
-}
-
-func (b *SelfBoard) Spaceships() []*Spaceship {
-	return b.spaceships
-}
-
-func (b *SelfBoard) AllShipsDead() bool {
-	return b.CountShipsAlive() == 0
-}
-
-func (b *SelfBoard) CountShipsAlive() int {
-	i := 0
-	for _, spaceship := range b.spaceships {
-		if !spaceship.dead {
-			i++
-		}
-	}
-
-	return i
 }
 
 func (b *BaseBoard) buildBasePattern() [][]byte {
@@ -356,5 +331,43 @@ func (b *OpponentBoard) ApplyShotStatus(shot *Coords, status ShotStatus) {
 		b.misses = append(b.misses, shot)
 	case ShotStatusHit:
 		b.hits = append(b.hits, shot)
+	case ShotStatusKill:
+		b.hits = append(b.hits, shot)
+		b.spaceshipsAlive--
 	}
+}
+
+func (b *SelfBoard) Spaceships() []*Spaceship {
+	return b.spaceships
+}
+
+func (b *SelfBoard) CountShipsAlive() int {
+	i := 0
+	for _, spaceship := range b.spaceships {
+		if !spaceship.dead {
+			i++
+		}
+	}
+
+	return i
+}
+
+func (b *SelfBoard) AllShipsDead() bool {
+	return b.CountShipsAlive() == 0
+}
+
+func (b *OpponentBoard) CountShipsAlive() int {
+	return int(b.spaceshipsAlive)
+}
+
+func (b *OpponentBoard) AllShipsDead() bool {
+	return b.spaceshipsAlive == 0
+}
+
+func (b *OpponentBoard) String() string {
+	return fmt.Sprintf("%s", strings.Join(b.ToPattern(), "\n"))
+}
+
+func (b *SelfBoard) String() string {
+	return fmt.Sprintf("%s", strings.Join(b.ToPattern(), "\n"))
 }

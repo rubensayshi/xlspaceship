@@ -163,7 +163,10 @@ func (s *XLSpaceship) FireSalvo(game *ssgame.Game, salvo ssgame.CoordsGroup) (*S
 }
 
 func (s *XLSpaceship) ReceiveSalvo(game *ssgame.Game, salvo ssgame.CoordsGroup) (*SalvoResponse, error) {
-	// @TODO: we need to assert that the amount of shots in the salvo match the rules (1 per ship alive), but for that we need track when we kill enemy ships
+	// check that we're not cheating
+	if !s.cheat && len(salvo) > game.OpponentBoard.CountShipsAlive() {
+		return nil, errors.Errorf("More shots than ships alive (%d)", game.OpponentBoard.CountShipsAlive())
+	}
 
 	salvoRes := game.SelfBoard.ReceiveSalvo(salvo)
 	game.PlayerTurn = ssgame.PlayerSelf
