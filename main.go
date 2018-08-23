@@ -10,6 +10,10 @@ import (
 
 	"strings"
 
+	"sync"
+	"time"
+
+	"github.com/pkg/browser"
 	"github.com/rubensayshi/xlspaceship/pkg/ssclient"
 )
 
@@ -60,6 +64,7 @@ func maybeGetEnv(env string, dflt string) string {
 	return val
 }
 
+// define flags for CLI
 var fPort = flag.Int("port", maybeGetEnvInt("PORT", 8080), "port to serve the REST API on")
 var fPlayerID = flag.String("playerID", maybeGetEnv("PLAYERID", "player-1"), "your player ID")
 var fPlayerName = flag.String("playerName", maybeGetEnv("PLAYERNAME", "Player 1"), "your player name")
@@ -67,7 +72,7 @@ var fCheat = flag.Bool("cheat", maybeGetEnvBool("CHEAT", false), "enable cheat m
 var fDontOpenGui = flag.Bool("dontopengui", maybeGetEnvBool("DONTOPENGUI", false), "don't pop open the GUI when the process starts")
 
 func main() {
-	fmt.Printf("main \n")
+	fmt.Printf("XLSpaceship starting ... \n")
 	flag.Parse()
 
 	s := ssclient.NewXLSpaceship(*fPlayerID, *fPlayerName, "localhost", *fPort)
@@ -75,5 +80,22 @@ func main() {
 		s.EnableCheatMode()
 	}
 
-	ssclient.Serve(s, !*fDontOpenGui, *fPort)
+	wg := &sync.WaitGroup{}
+
+	ssclient.Serve(s, *fPort, wg)
+
+	guiUrl := fmt.Sprintf("http://localhost:%d/gui/game.html", *fPort)
+
+	if !*fDontOpenGui {
+		fmt.Printf("Opening GUI in browser (if it does not open visit: %s", guiUrl)
+		go func() {
+			<-time.After(time.Millisecond * 100)
+			browser.OpenURL(guiUrl)
+		}()
+	} else {
+		fmt.Printf("You can open the GUI in the browser by visiting: %s", guiUrl)
+	}
+
+	// if waitgroup finishes then we quit
+	wg.Wait()
 }

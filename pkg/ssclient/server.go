@@ -8,15 +8,12 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/rubensayshi/xlspaceship/pkg/ssgame"
 
-	"time"
-
 	"sync"
 
-	"github.com/pkg/browser"
 	_ "github.com/rubensayshi/xlspaceship/statik" // registers our static files to serve
 )
 
-func Serve(s *XLSpaceship, openGUI bool, port int) {
+func Serve(s *XLSpaceship, port int, wg *sync.WaitGroup) {
 	r := mux.NewRouter()
 
 	// add go routing handlers
@@ -29,28 +26,16 @@ func Serve(s *XLSpaceship, openGUI bool, port int) {
 
 	ServeAddStaticHandler(r)
 
-	wg := sync.WaitGroup{}
-
 	// start serving
 	wg.Add(1)
 	go func() {
-		fmt.Printf("Serve :%d \n", port)
+		fmt.Printf("Serve REST API on :%d \n", port)
 		if err := http.ListenAndServe(fmt.Sprintf(":%d", port), r); err != nil {
 			panic(err)
 		}
 
 		wg.Done()
 	}()
-
-	if openGUI {
-		go func() {
-			<-time.After(time.Millisecond * 100)
-			browser.OpenURL(fmt.Sprintf("http://localhost:%d/gui/game.html", port))
-		}()
-	}
-
-	// if waitgroup finishes then we quit
-	wg.Wait()
 }
 
 func AddWhoAmIGameHandler(s *XLSpaceship, r *mux.Router) {
