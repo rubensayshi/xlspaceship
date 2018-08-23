@@ -122,6 +122,10 @@ func (b *Board) String() string {
 	return fmt.Sprintf("%s", strings.Join(b.ToPattern(), "\n"))
 }
 
+func (b *Board) Spaceships() []*Spaceship {
+	return b.spaceships
+}
+
 func (b *Board) AllShipsDead() bool {
 	return b.CountShipsAlive() == 0
 }
@@ -270,4 +274,13 @@ func (b *Board) ApplyShot(shot *Coords) *ShotResult {
 	}
 
 	return res
+}
+
+func (b *Board) ApplyShotStatus(shot *Coords, status ShotStatus) {
+	switch status {
+	case ShotStatusMiss:
+		b.misses = append(b.misses, shot)
+	case ShotStatusHit:
+		b.hits = append(b.hits, shot)
+	}
 }

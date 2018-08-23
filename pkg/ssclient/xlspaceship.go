@@ -144,6 +144,8 @@ func (s *XLSpaceship) FireSalvo(game *ssgame.Game, salvo ssgame.CoordsGroup) (*S
 		}
 
 		salvoRes = append(salvoRes, &ssgame.ShotResult{coords, shotStatus})
+
+		game.OpponentBoard.ApplyShotStatus(coords, shotStatus)
 	}
 
 	game.PlayerTurn = ssgame.PlayerOpponent

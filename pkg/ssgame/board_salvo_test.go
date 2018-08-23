@@ -94,3 +94,32 @@ func TestBoard_ApplyShotKillTwice(t *testing.T) {
 	assert.NotNil(res)
 	assert.Equal(ShotStatusMiss, res.ShotStatus)
 }
+
+func TestBoard_ApplyShotStatus(t *testing.T) {
+	assert := require.New(t)
+
+	board, err := BoardFromPattern(BlankBoardPattern())
+	assert.NoError(err)
+
+	board.ApplyShotStatus(&Coords{2, 0}, ShotStatusHit)
+	board.ApplyShotStatus(&Coords{3, 0}, ShotStatusMiss)
+
+	assert.Equal([]string{
+		"..X-............",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+	}, board.ToPattern())
+}

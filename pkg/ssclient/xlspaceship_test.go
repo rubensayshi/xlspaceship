@@ -109,7 +109,12 @@ func TestXLSpaceship_FireSalvo(t *testing.T) {
 
 	mockRequester.On("ReceiveSalvo", ssProtocol, game.GameID, ReceiveSalvoRequest{
 		Salvo: []string{"0x0", "1x1"},
-	}).Return(&SalvoResponse{}, nil)
+	}).Return(&SalvoResponse{
+		Salvo: map[string]string{
+			"0x0": "hit",
+			"1x1": "miss",
+		},
+	}, nil)
 
 	res, err := xl.FireSalvo(game, ssgame.CoordsGroup{
 		mustCoordsFromString("0x0"),
@@ -117,6 +122,29 @@ func TestXLSpaceship_FireSalvo(t *testing.T) {
 	})
 	assert.NoError(err)
 	assert.NotNil(res)
+
+	status, ok := xl.GameStatus(game.GameID)
+	assert.True(ok)
+	assert.NotNil(status)
+
+	assert.Equal([]string{
+		"X...............",
+		".-..............",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+	}, status.Opponent.Board)
 
 	mockRequester.AssertExpectations(t)
 }
