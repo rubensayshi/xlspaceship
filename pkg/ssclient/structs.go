@@ -102,9 +102,12 @@ type ReceiveSalvoRequest struct {
 	Salvo []string `json:"salvo"`
 }
 
+// @TODO: should make custom JSON marshall/unmarshall for the "game" field instead of the hacky way we do now
 type SalvoResponse struct {
-	Salvo map[string]string `json:"salvo"`
-	Game  interface{}       `json:"ssgame"` // ewww interface, but alternative is having multiple structs for this response
+	Salvo          map[string]string       `json:"salvo"`
+	Game           map[string]string       `json:"game"`
+	GameWon        *GameWonResponse        `json:"-"`
+	GamePlayerTurn *GamePlayerTurnResponse `json:"-"`
 }
 
 func ReceiveSalvoResponseFromSalvoResult(salvoResult []*ssgame.ShotResult, s *XLSpaceship, game *ssgame.Game) *SalvoResponse {
@@ -117,19 +120,16 @@ func ReceiveSalvoResponseFromSalvoResult(salvoResult []*ssgame.ShotResult, s *XL
 	}
 
 	if game.Status == ssgame.GameStatusDone {
-		gameRes := GameWonResponse{}
-		gameRes.Won = game.Opponent.PlayerID
-
-		res.Game = gameRes
+		res.GameWon = &GameWonResponse{Won: game.Opponent.PlayerID}
+		res.Game = map[string]string{"won": game.Opponent.PlayerID}
 	} else {
-		gameRes := GamePlayerTurnResponse{}
-		if game.PlayerTurn == ssgame.PlayerSelf {
-			gameRes.PlayerTurn = s.Player.PlayerID
-		} else {
-			gameRes.PlayerTurn = game.Opponent.PlayerID
+		playerTurn := s.Player.PlayerID
+		if game.PlayerTurn != ssgame.PlayerSelf {
+			playerTurn = game.Opponent.PlayerID
 		}
 
-		res.Game = gameRes
+		res.GamePlayerTurn = &GamePlayerTurnResponse{PlayerTurn: playerTurn}
+		res.Game = map[string]string{"player_turn": playerTurn}
 	}
 
 	return res

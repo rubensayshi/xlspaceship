@@ -62,5 +62,17 @@ func (r *HttpRequester) ReceiveSalvo(dest SpaceshipProtocol, gameID string, req 
 		return nil, errors.Wrapf(err, "Failed to request receive salvo")
 	}
 
+	if playerIdWon, won := salvoResponse.Game["won"]; won {
+		salvoResponse.GameWon = &GameWonResponse{
+			Won: playerIdWon,
+		}
+	} else if playerIdTurn, turn := salvoResponse.Game["player_turn"]; turn {
+		salvoResponse.GamePlayerTurn = &GamePlayerTurnResponse{
+			PlayerTurn: playerIdTurn,
+		}
+	} else {
+		return nil, errors.Errorf("SalvoResponse should either contain 'won' or 'player_turn'")
+	}
+
 	return salvoResponse, nil
 }

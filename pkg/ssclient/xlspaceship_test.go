@@ -95,7 +95,8 @@ func TestXLSpaceship_ReceiveSalvo(t *testing.T) {
 		"2x0": "kill",
 	}, salvoRes.Salvo)
 
-	assert.Equal("testplayer-2", salvoRes.Game.(GameWonResponse).Won)
+	assert.NotNil(salvoRes.GameWon)
+	assert.Equal("testplayer-2", salvoRes.GameWon.Won)
 }
 
 func TestXLSpaceship_InitNewGame(t *testing.T) {
@@ -228,7 +229,7 @@ func TestXLSpaceship_FireSalvoWin(t *testing.T) {
 			"0x0": "hit",
 			"1x1": "kill",
 		},
-		Game: GameWonResponse{
+		GameWon: &GameWonResponse{
 			Won: "testplayer-1",
 		},
 	}, nil)

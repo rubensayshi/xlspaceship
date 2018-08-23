@@ -128,7 +128,7 @@ func (s *XLSpaceship) FireSalvo(game *ssgame.Game, salvo ssgame.CoordsGroup) (*S
 		Port:     game.Opponent.ProtocolPort,
 	}, game.GameID, req)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Failed to fire salvo")
+		return nil, errors.Wrapf(err, "Failed to fire salvo (req)")
 	}
 
 	// mark result on our end
@@ -151,8 +151,7 @@ func (s *XLSpaceship) FireSalvo(game *ssgame.Game, salvo ssgame.CoordsGroup) (*S
 
 	game.PlayerTurn = ssgame.PlayerOpponent
 
-	_, win := res.Game.(GameWonResponse)
-	if win {
+	if res.GameWon != nil {
 		game.Status = ssgame.GameStatusDone
 		game.PlayerWon = ssgame.PlayerSelf
 	}
