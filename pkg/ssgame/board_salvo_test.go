@@ -73,6 +73,22 @@ func TestBoard_ApplyShotKill(t *testing.T) {
 	assert.Equal(ShotStatusKill, res.ShotStatus)
 }
 
+func TestBoard_ReceiveSalvoKill(t *testing.T) {
+	assert := require.New(t)
+
+	board := NewBasicTestBoardWithSpaceship(assert)
+
+	res := board.ReceiveSalvo(CoordsGroup{
+		{0, 0},
+		{1, 0},
+		{2, 0},
+	})
+	assert.NotNil(res)
+	assert.Equal(ShotStatusHit, res[0].ShotStatus)
+	assert.Equal(ShotStatusHit, res[1].ShotStatus)
+	assert.Equal(ShotStatusKill, res[2].ShotStatus)
+}
+
 func TestBoard_ApplyShotKillTwice(t *testing.T) {
 	assert := require.New(t)
 
