@@ -1,5 +1,5 @@
 angular.module('xlspaceship')
-    .controller('XLSpaceshipPlayCtrl', function($scope, $stateParams, $http, $timeout) {
+    .controller('XLSpaceshipPlayCtrl', function($scope, $state, $stateParams, $http, $timeout) {
         $scope.refreshing = false;
         $scope.game = $scope.games[$stateParams.gameID];
 

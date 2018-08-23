@@ -10,16 +10,17 @@ angular.module('xlspaceship')
         };
 
         function whoami() {
-            $http.get("/xl-spaceship/user").catch(function(err) {
-                console.log(err);
-                alert(err.data || err);
+            $http.get("/xl-spaceship/user")
+                .then(function(res) {
+                    $scope.PLAYERID = res.data.user_id;
+                    $scope.PLAYERNAME = res.data.full_name;
+                }, function(err) {
+                    console.log(err);
+                    alert(err.data || err);
 
-                throw err
-            }).then(function(res) {
-                $scope.PLAYERID = res.data.user_id;
-                $scope.PLAYERNAME = res.data.full_name;
-            });
-        };
+                    throw err
+                });
+        }
 
         function challange() {
             $http.post("/xl-spaceship/user/game/new", {
@@ -27,32 +28,34 @@ angular.module('xlspaceship')
                     hostname: $scope.newOpponent.host,
                     port: parseInt($scope.newOpponent.port, 10),
                 }
-            }, {headers: {'Content-Type': 'application/json'}}).catch(function(err) {
-                console.log(err);
-                alert(err.data || err);
+            }, {headers: {'Content-Type': 'application/json'}})
+                .then(function(res) {
+                    console.log(res.data);
 
-                throw err
-            }).then(function(res) {
-                console.log(res.data);
+                    $scope.games[res.data.game_id] = res.data;
 
-                $scope.games[res.data.game_id] = res.data;
+                    $state.go('app.xlspaceship.play', {gameID: res.data.game_id});
+                }, function(err) {
+                    console.log(err);
+                    alert(err.data || err);
 
-                $state.go('app.xlspaceship.play', {gameID: res.data.game_id});
-            });
+                    throw err
+                });
         }
 
         function refreshGame(gameID) {
             $scope.refreshing = true;
 
-            return $http.get("/xl-spaceship/user/game/" + gameID).catch(function(err) {
-                console.log(err);
+            return $http.get("/xl-spaceship/user/game/" + gameID)
+                .then(function(res) {
+                    console.log(res.data);
 
-                throw err;
-            }).then(function(res) {
-                console.log(res.data);
+                    return res.data;
+                }, function(err) {
+                    console.log(err);
 
-                return res.data;
-            });
+                    throw err;
+                });
         }
 
         $scope.challange = challange;
