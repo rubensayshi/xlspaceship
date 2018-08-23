@@ -11,14 +11,14 @@ func init() {
 	rand.Seed(1)
 }
 
-type GameStatus uint8
+type GameStatus int8
 
 const (
 	GameStatusOnGoing GameStatus = 0
 	GameStatusDone    GameStatus = 1
 )
 
-type PlayerT uint8
+type PlayerT int8
 
 func (p PlayerT) String() string {
 	switch p {

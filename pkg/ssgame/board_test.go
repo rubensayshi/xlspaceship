@@ -84,8 +84,8 @@ func TestCoordsGroupFromSalvoStringsInvalid(t *testing.T) {
 func TestNewRandomBoardTooMany1(t *testing.T) {
 	assert := require.New(t)
 
-	// fresh seed so the "randomness" is consistent
-	rand.Seed(1)
+	// fresh seed so the "randomness" is consistent and results in 2 fails and then a success
+	rand.Seed(10)
 
 	ManySpaceships := [][]string{
 		SpaceshipPatternSClass,
@@ -128,8 +128,8 @@ func TestNewRandomBoardTooMany1(t *testing.T) {
 func TestNewRandomBoardTooMany2(t *testing.T) {
 	assert := require.New(t)
 
-	// fresh seed so the "randomness" is consistent
-	rand.Seed(1)
+	// fresh seed so the "randomness" is consistent and results in 2 fails and then a success
+	rand.Seed(10)
 
 	ManySpaceships := [][]string{
 		SpaceshipPatternSClass,

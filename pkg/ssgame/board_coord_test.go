@@ -10,8 +10,8 @@ import (
 
 type TestCoordFixture struct {
 	input string
-	x     uint8
-	y     uint8
+	x     int8
+	y     int8
 }
 
 func TestCoordFromString(t *testing.T) {
@@ -23,8 +23,8 @@ func TestCoordFromString(t *testing.T) {
 
 	for x := 0; x < 16; x++ {
 		for y := 0; y < 16; y++ {
-			fixtures = append(fixtures, TestCoordFixture{fmt.Sprintf("%xx%x", x, y), uint8(x), uint8(y)})
-			fixtures = append(fixtures, TestCoordFixture{fmt.Sprintf("%Xx%X", x, y), uint8(x), uint8(y)})
+			fixtures = append(fixtures, TestCoordFixture{fmt.Sprintf("%xx%x", x, y), int8(x), int8(y)})
+			fixtures = append(fixtures, TestCoordFixture{fmt.Sprintf("%Xx%X", x, y), int8(x), int8(y)})
 		}
 	}
 

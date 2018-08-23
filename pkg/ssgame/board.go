@@ -108,9 +108,9 @@ func BoardFromPattern(pattern []string) (*Board, error) {
 			case CoordsShip:
 				// @TODO: not implemented, the dream is to store them and try and match the patterns to our known spaceships
 			case CoordsHit:
-				board.hits = append(board.hits, &Coords{x: uint8(x), y: uint8(y)})
+				board.hits = append(board.hits, &Coords{x: int8(x), y: int8(y)})
 			case CoordsMiss:
-				board.misses = append(board.misses, &Coords{x: uint8(x), y: uint8(y)})
+				board.misses = append(board.misses, &Coords{x: int8(x), y: int8(y)})
 			}
 		}
 	}
@@ -177,10 +177,13 @@ func (b *Board) AddSpaceship(spaceship *Spaceship) error {
 		x := rand.Intn(COLS)
 		y := rand.Intn(ROWS)
 
-		// rotate degrees
-		//rotate := rand.Intn(3) * 90
+		newSpaceship := spaceship.CopyWithOffset(int8(x), int8(y))
 
-		newSpaceship := spaceship.CopyWithOffset(uint8(x), uint8(y))
+		// rotate degrees
+		rotate := rand.Intn(3) * 90
+		if rotate != 0 {
+			newSpaceship.Rotate(uint16(rotate))
+		}
 
 		err := b.AddSpaceshipOnCoords(newSpaceship)
 		// we're done if no err

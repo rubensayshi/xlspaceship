@@ -50,7 +50,7 @@ const (
 	CoordsMissStr  string = "-"
 )
 
-type ShotStatus uint8
+type ShotStatus int8
 
 func ShotStatusFromString(statusStr string) (ShotStatus, error) {
 	switch statusStr {
@@ -89,8 +89,8 @@ const (
 )
 
 type Coords struct {
-	x uint8
-	y uint8
+	x int8
+	y int8
 }
 
 func CoordsFromString(coordsStr string) (*Coords, error) {
@@ -108,7 +108,7 @@ func CoordsFromString(coordsStr string) (*Coords, error) {
 		return nil, errors.New(fmt.Sprintf("Failed to parse Coords [%s]", coordsStr))
 	}
 
-	coords := &Coords{x: uint8(x), y: uint8(y)}
+	coords := &Coords{x: int8(x), y: int8(y)}
 
 	return coords, nil
 }
