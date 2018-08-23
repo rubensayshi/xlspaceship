@@ -15,6 +15,7 @@ type XLSpaceship struct {
 	Player    *ssgame.Player
 	games     map[string]*ssgame.Game
 	requester Requester
+	cheat     bool
 }
 
 func NewXLSpaceship(playerID string, host string, port int) *XLSpaceship {
@@ -38,6 +39,10 @@ func NewXLSpaceship(playerID string, host string, port int) *XLSpaceship {
 	rand.Seed(seed)
 
 	return s
+}
+
+func (s *XLSpaceship) EnableCheatMode() {
+	s.cheat = true
 }
 
 func (s *XLSpaceship) NewGame(req *NewGameRequest) (*NewGameResponse, error) {
@@ -105,6 +110,11 @@ func (s *XLSpaceship) GameStatus(gameID string) (*GameStatusResponse, bool) {
 }
 
 func (s *XLSpaceship) FireSalvo(game *ssgame.Game, salvo ssgame.CoordsGroup) (*SalvoResponse, error) {
+	// check that we're not cheating
+	if !s.cheat && len(salvo) > game.SelfBoard.CountShipsAlive() {
+		return nil, errors.Errorf("More shots than ships alive (%d)", game.SelfBoard.CountShipsAlive())
+	}
+
 	req := &ReceiveSalvoRequest{
 		Salvo: make([]string, len(salvo)),
 	}
@@ -151,7 +161,7 @@ func (s *XLSpaceship) FireSalvo(game *ssgame.Game, salvo ssgame.CoordsGroup) (*S
 }
 
 func (s *XLSpaceship) ReceiveSalvo(game *ssgame.Game, salvo ssgame.CoordsGroup) (*SalvoResponse, error) {
-	// @TODO: we need to assert that the amount of shots in the salvo match the rules (5 shots)
+	// @TODO: we need to assert that the amount of shots in the salvo match the rules (1 per ship alive), but for that we need track when we kill enemy ships
 
 	salvoRes := game.SelfBoard.ReceiveSalvo(salvo)
 	game.PlayerTurn = ssgame.PlayerSelf

@@ -123,13 +123,18 @@ func (b *Board) String() string {
 }
 
 func (b *Board) AllShipsDead() bool {
+	return b.CountShipsAlive() == 0
+}
+
+func (b *Board) CountShipsAlive() int {
+	i := 0
 	for _, spaceship := range b.spaceships {
 		if !spaceship.dead {
-			return false
+			i++
 		}
 	}
 
-	return true
+	return i
 }
 
 func (b *Board) ToPattern() []string {

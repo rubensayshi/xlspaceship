@@ -8,6 +8,8 @@ import (
 
 	"fmt"
 
+	"strings"
+
 	"github.com/rubensayshi/xlspaceship/pkg/ssclient"
 )
 
@@ -25,6 +27,30 @@ func maybeGetEnvInt(env string, dflt int) int {
 	return int(intval)
 }
 
+func maybeGetEnvBool(env string, dflt bool) bool {
+	val := os.Getenv(env)
+	if val == "" {
+		return dflt
+	}
+
+	switch strings.ToLower(val) {
+	case "true":
+		return true
+	case "1":
+		return true
+	case "yes":
+		return true
+	case "false":
+		return true
+	case "0":
+		return true
+	case "no":
+		return true
+	}
+
+	return dflt
+}
+
 func maybeGetEnv(env string, dflt string) string {
 	val := os.Getenv(env)
 	if val == "" {
@@ -37,12 +63,16 @@ func maybeGetEnv(env string, dflt string) string {
 // @TODO: DEFAULT -> SEE DOC
 var fPort = flag.Int("port", maybeGetEnvInt("PORT", 8000), "port to serve the REST API on")
 var fPlayerID = flag.String("playerID", maybeGetEnv("PLAYERID", "player-1"), "your player ID")
+var fCheat = flag.Bool("cheat", maybeGetEnvBool("CHEAT", false), "enable cheat mode")
 
 func main() {
 	fmt.Printf("main \n")
 	flag.Parse()
 
 	s := ssclient.NewXLSpaceship(*fPlayerID, "localhost", *fPort)
+	if *fCheat {
+		s.EnableCheatMode()
+	}
 
 	ssclient.Serve(s, *fPort)
 }
