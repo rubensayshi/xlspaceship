@@ -7,8 +7,6 @@ import (
 
 	"math/rand"
 
-	"strings"
-
 	"github.com/stretchr/testify/require"
 )
 
@@ -156,14 +154,4 @@ func TestNewRandomBoardTooMany2(t *testing.T) {
 	board, err := NewRandomSelfBoard(ManySpaceships)
 	assert.NoError(err)
 	assert.NotNil(board)
-}
-
-func TestSpaceship_String(t *testing.T) {
-	assert := require.New(t)
-
-	ss, err := SpaceshipFromPattern(SpaceshipPatternSClass)
-	assert.NoError(err)
-
-	assert.Equal(strings.Join(SpaceshipPatternSClass, "\n"), fmt.Sprintf("%s", ss))
-
 }

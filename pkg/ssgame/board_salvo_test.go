@@ -122,6 +122,33 @@ func TestBoard_ApplyShotStatus(t *testing.T) {
 		"................",
 		"................",
 	}, board.ToPattern())
+
+	assert.Equal(1, board.CountShipsAlive())
+	assert.Equal(false, board.AllShipsDead())
+
+	board.ApplyShotStatus(&Coords{1, 0}, ShotStatusKill)
+
+	assert.Equal([]string{
+		".XX-............",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+	}, board.ToPattern())
+
+	assert.Equal(0, board.CountShipsAlive())
+	assert.Equal(true, board.AllShipsDead())
 }
 
 func TestBoard_ApplyShotStatusKill(t *testing.T) {

@@ -7,3 +7,4 @@ import:
   version: ^0.8.0
 - package: github.com/gorilla/mux
   version: ^1.6.2
+- package: github.com/wadey/gocovmerge
