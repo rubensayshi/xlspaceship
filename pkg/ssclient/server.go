@@ -27,7 +27,7 @@ func Serve(s *XLSpaceship, port int) {
 
 func AddNewGameHandler(s *XLSpaceship, r *mux.Router) {
 	r.HandleFunc("/xl-spaceship/protocol/game/new", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("%s \n", r.RequestURI)
+		fmt.Printf("%s: %s \n", r.Method, r.RequestURI)
 
 		req := &NewGameRequest{}
 		err := json.NewDecoder(r.Body).Decode(&req)

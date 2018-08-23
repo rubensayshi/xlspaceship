@@ -63,13 +63,14 @@ func maybeGetEnv(env string, dflt string) string {
 // @TODO: DEFAULT -> SEE DOC
 var fPort = flag.Int("port", maybeGetEnvInt("PORT", 8000), "port to serve the REST API on")
 var fPlayerID = flag.String("playerID", maybeGetEnv("PLAYERID", "player-1"), "your player ID")
+var fPlayerName = flag.String("playerName", maybeGetEnv("PLAYERNAME", "Player 1"), "your player name")
 var fCheat = flag.Bool("cheat", maybeGetEnvBool("CHEAT", false), "enable cheat mode")
 
 func main() {
 	fmt.Printf("main \n")
 	flag.Parse()
 
-	s := ssclient.NewXLSpaceship(*fPlayerID, "localhost", *fPort)
+	s := ssclient.NewXLSpaceship(*fPlayerID, *fPlayerName, "localhost", *fPort)
 	if *fCheat {
 		s.EnableCheatMode()
 	}

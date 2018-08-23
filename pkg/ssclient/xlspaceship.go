@@ -18,11 +18,11 @@ type XLSpaceship struct {
 	cheat     bool
 }
 
-func NewXLSpaceship(playerID string, host string, port int) *XLSpaceship {
+func NewXLSpaceship(playerID string, playerName string, host string, port int) *XLSpaceship {
 	s := &XLSpaceship{
 		Player: &ssgame.Player{
 			PlayerID:     playerID,
-			FullName:     playerID,
+			FullName:     playerName,
 			ProtocolHost: host,
 			ProtocolPort: port,
 		},

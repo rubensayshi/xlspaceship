@@ -21,7 +21,7 @@ func mustCoordsFromString(coordsStr string) *ssgame.Coords {
 func TestNewXLSpaceship(t *testing.T) {
 	assert := require.New(t)
 
-	xl := NewXLSpaceship("testplayer-1", "notlocalhost", 1337)
+	xl := NewXLSpaceship("testplayer-1", "Test Player 1", "notlocalhost", 1337)
 	assert.NotNil(xl)
 	assert.Equal("testplayer-1", xl.Player.PlayerID)
 	assert.Equal("notlocalhost", xl.Player.ProtocolHost)
@@ -31,7 +31,7 @@ func TestNewXLSpaceship(t *testing.T) {
 func TestXLSpaceship_NewGame(t *testing.T) {
 	assert := require.New(t)
 
-	xl := NewXLSpaceship("testplayer-1", "notlocalhost", 1337)
+	xl := NewXLSpaceship("testplayer-1", "Test Player 1", "notlocalhost", 1337)
 	assert.NotNil(xl)
 
 	req := &NewGameRequest{
@@ -54,7 +54,7 @@ func TestXLSpaceship_NewGame(t *testing.T) {
 func TestXLSpaceship_InitNewGame(t *testing.T) {
 	assert := require.New(t)
 
-	xl := NewXLSpaceship("testplayer-1", "notlocalhost", 1337)
+	xl := NewXLSpaceship("testplayer-1", "Test Player 1", "notlocalhost", 1337)
 	assert.NotNil(xl)
 
 	mockRequester := &MockRequester{}
@@ -87,7 +87,7 @@ func TestXLSpaceship_InitNewGame(t *testing.T) {
 func TestXLSpaceship_FireSalvo(t *testing.T) {
 	assert := require.New(t)
 
-	xl := NewXLSpaceship("testplayer-1", "notlocalhost", 1337)
+	xl := NewXLSpaceship("testplayer-1", "Test Player 1", "notlocalhost", 1337)
 	assert.NotNil(xl)
 
 	mockRequester := &MockRequester{}
