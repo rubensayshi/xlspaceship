@@ -12,10 +12,17 @@ coverage:
 	go run vendor/github.com/wadey/gocovmerge/gocovmerge.go coverage1.out coverage2.out > coverage.out
 	go tool cover -func=coverage.out
 
-build-public:
-	go run vendor/github.com/rakyll/statik/statik.go -src=./public/ -f -m -Z
+build-gui:
+	cd ./gui && bower update && gulp
 
-build: build-public build-linux build-windows
+watch-build-gui:
+	cd ./gui && bower update && gulp watch --live-reload
+
+build-gui-statik:
+	rm ./statik/statik.go || echo ""
+	go run vendor/github.com/rakyll/statik/statik.go -src=./gui/web/www/ -f -m -Z
+
+build: build-gui build-gui-statik build-linux build-windows
 
 build-windows:
 	 GOOS=windows GOARCH=amd64 go build -o bin/xlspaceship-win64.exe main.go
