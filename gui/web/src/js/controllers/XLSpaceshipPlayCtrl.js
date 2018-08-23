@@ -1,5 +1,5 @@
 angular.module('xlspaceship')
-    .controller('XLSpaceshipPlayCtrl', function($scope, $stateParams, $http, $timeout, $interval) {
+    .controller('XLSpaceshipPlayCtrl', function($scope, $stateParams, $http, $timeout) {
         $scope.refreshing = false;
         $scope.game = $scope.games[$stateParams.gameID];
 
@@ -22,23 +22,17 @@ angular.module('xlspaceship')
             };
         }
 
-        function refreshStatus() {
+        function refresh() {
             $scope.refreshing = true;
 
-            return $http.get("/xl-spaceship/user/game/" + $stateParams.gameID).catch(function(err) {
-                console.log(err);
-
-                throw err;
-            }).then(function(res) {
-                console.log(res.data);
-
-                $scope.game = res.data;
+            return $scope.refreshGame($stateParams.gameID).then(function(game) {
+                $scope.game = game;
 
                 $timeout(function() {
                     $scope.refreshing = false;
                 }, 200);
 
-                return res.data;
+                return game;
             });
         }
 
@@ -54,23 +48,21 @@ angular.module('xlspaceship')
                 // new random salvo for next round
                 $scope.salvo = randomSalvo();
 
-                return $scope.refreshStatus();
+                return refresh();
             });
         }
 
-        $scope.refreshStatus = refreshStatus;
+        $scope.refresh = refresh;
         $scope.fireSalvo = fireSalvo;
 
         if (!$scope.game) {
-            $scope.refreshStatus()
-                .catch(function() {
+            refresh()
+                .then(function(game) {
+                    $scope.games[game.game_id] = game;
+                }, function() {
                     $state.go('app.xlspaceship.welcome');
                 })
             ;
         }
-
-        $interval(function() {
-            refreshStatus();
-        }, 500);
     });
 

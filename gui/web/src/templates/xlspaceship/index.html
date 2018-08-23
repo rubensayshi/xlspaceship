@@ -22,6 +22,14 @@
                             <li ng-repeat="game in games">
                                 <a ui-sref="app.xlspaceship.play({gameID: game.game_id})">
                                     {{ game.game_id }}
+                                        <i class="glyphicon glyphicon-heart" title="You won!"
+                                           ng-if="game.game.won && game.game.won == PLAYERID"></i>
+                                        <i class="glyphicon glyphicon-thumbs-down" title="You lost"
+                                           ng-if="game.game.won && game.game.won != PLAYERID"></i>
+                                        <i class="glyphicon glyphicon-asterisk" title="Your turn!"
+                                           ng-if="!game.game.won && game.game.player_turn == PLAYERID"></i>
+                                        <i class="glyphicon glyphicon-hourglass" title="Waiting for opponent"
+                                           ng-if="!game.game.won && game.game.player_turn != PLAYERID"></i>
                                 </a>
                             </li>
                         </ul>
