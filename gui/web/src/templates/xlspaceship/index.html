@@ -1,9 +1,53 @@
 <div class="row">
     <div class="col-xs-12">
         <ol class="breadcrumb">
-            <li>XLSpaceship</li>
+            <li>XLSpaceship ({{ PLAYERID }})</li>
         </ol>
     </div>
 </div>
 
-<div ui-view></div>
+<div class="row">
+    <div class="col-xs-8">
+        <div ui-view></div>
+    </div>
+    <div class="col-xs-4">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h3 class="panel-title">Your Games</h3>
+            </div>
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-xs-12">
+                        <ul>
+                            <li ng-repeat="game in games">
+                                <a ui-sref="app.xlspaceship.play({gameID: game.game_id})">
+                                    {{ game.game_id }}
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-xs-12">
+                        <h3>Challange Another Player</h3>
+                        <form>
+                            <div class="form-group">
+                                <label>Host</label>
+                                <input class="form-control" type="text" ng-model="newOpponent.host"/>
+                            </div>
+                            <div class="form-group">
+                                <label>Port</label>
+                                <input class="form-control" type="text" ng-model="newOpponent.port"/>
+                            </div>
+                            <div>
+                                <button class="btn btn-primary btn-block" ng-click="challange()">Challange</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+

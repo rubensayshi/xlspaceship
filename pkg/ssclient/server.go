@@ -20,6 +20,7 @@ func Serve(s *XLSpaceship, openGUI bool, port int) {
 	r := mux.NewRouter()
 
 	// add go routing handlers
+	AddWhoAmIGameHandler(s, r)
 	AddNewGameHandler(s, r)
 	AddInitGameHandler(s, r)
 	AddGameStatusHandler(s, r)
@@ -50,6 +51,26 @@ func Serve(s *XLSpaceship, openGUI bool, port int) {
 
 	// if waitgroup finishes then we quit
 	wg.Wait()
+}
+
+func AddWhoAmIGameHandler(s *XLSpaceship, r *mux.Router) {
+	r.HandleFunc("/xl-spaceship/user", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("%s: %s \n", r.Method, r.RequestURI)
+
+		res := &WhoAmIResponse{}
+		res.UserID = s.Player.PlayerID
+		res.FullName = s.Player.FullName
+
+		resJson, err := json.MarshalIndent(res, "", "    ")
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		w.Write(resJson)
+	})
 }
 
 func AddNewGameHandler(s *XLSpaceship, r *mux.Router) {
@@ -110,7 +131,7 @@ func AddInitGameHandler(s *XLSpaceship, r *mux.Router) {
 }
 
 func AddGameStatusHandler(s *XLSpaceship, r *mux.Router) {
-	r.HandleFunc("/xl-spaceship/user/game/", func(w http.ResponseWriter, r *http.Request) {
+	r.HandleFunc("/xl-spaceship/user/game/{gameID}", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("%s \n", r.RequestURI)
 
 		vars := mux.Vars(r)
@@ -221,7 +242,7 @@ func AddReceiveSalvoHandler(s *XLSpaceship, r *mux.Router) {
 			return
 		}
 
-		// check if it's the opponent's turn, otherwise he's not allowed to fire
+		// check if it's the newOpponent's turn, otherwise he's not allowed to fire
 		if game.PlayerTurn != ssgame.PlayerOpponent {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte(fmt.Sprintf("Not your turn")))

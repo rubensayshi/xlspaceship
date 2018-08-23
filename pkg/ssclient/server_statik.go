@@ -14,7 +14,7 @@ import (
 )
 
 func ServeAddStaticHandler(r *mux.Router) error {
-	fmt.Printf("using statik to serve statics")
+	fmt.Printf("using statik to serve statics \n")
 
 	// open statik bundle of our static files
 	statikFS, err := fs.New()

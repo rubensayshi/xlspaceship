@@ -2,14 +2,14 @@ package ssclient
 
 import "github.com/rubensayshi/xlspaceship/pkg/ssgame"
 
-const (
-	DEFAULT_PORT = "3001"
-	URI_PREFIX   = "/xl-spaceship"
-)
-
 type SpaceshipProtocol struct {
 	Hostname string `json:"hostname"`
 	Port     int    `json:"port"`
+}
+
+type WhoAmIResponse struct {
+	UserID   string `json:"user_id"`
+	FullName string `json:"full_name"`
 }
 
 type NewGameRequest struct {
@@ -54,6 +54,7 @@ type GameWonResponse struct {
 }
 
 type GameStatusResponse struct {
+	GameID   string                   `json:"game_id"`
 	Self     GameStatusResponsePlayer `json:"self"`
 	Opponent GameStatusResponsePlayer `json:"opponent"`
 	Game     interface{}              `json:"game"`
@@ -65,14 +66,18 @@ type GameStatusResponsePlayer struct {
 }
 
 func GameStatusResponseFromGame(s *XLSpaceship, game *ssgame.Game) *GameStatusResponse {
-	res := &GameStatusResponse{}
+	res := &GameStatusResponse{
+		GameID: game.GameID,
+	}
 
 	res.Self = GameStatusResponsePlayer{
-		Board: game.SelfBoard.ToPattern(),
+		UserID: s.Player.PlayerID,
+		Board:  game.SelfBoard.ToPattern(),
 	}
 
 	res.Opponent = GameStatusResponsePlayer{
-		Board: game.OpponentBoard.ToPattern(),
+		UserID: game.Opponent.PlayerID,
+		Board:  game.OpponentBoard.ToPattern(),
 	}
 
 	if game.Status == ssgame.GameStatusDone {

@@ -62,18 +62,23 @@ angular.module('xlspaceship').config(
             })
             .state('app.xlspaceship', {
                 abstract: true,
-                templateUrl: "templates/xlspaceship/index.html",
                 url: "/xlspaceship",
+                templateUrl: "templates/xlspaceship/index.html",
                 controller: "XLSpaceshipCtrl"
             })
-            .state('app.xlspaceship.input', {
-                url: "/",
-                controller: "XLSpaceshipInputCtrl",
-                templateUrl: "templates/xlspaceship/input.html"
+            .state('app.xlspaceship.welcome', {
+                url: "/welcome",
+                controller: "XLSpaceshipWelcomeCtrl",
+                templateUrl: "templates/xlspaceship/welcome.html"
+            })
+            .state('app.xlspaceship.play', {
+                url: "/play/{gameID}",
+                controller: "XLSpaceshipPlayCtrl",
+                templateUrl: "templates/xlspaceship/play.html"
             });
 
         // if none of the above states are matched, use this as the fallback
-        $urlRouterProvider.otherwise('/xlspaceship/');
+        $urlRouterProvider.otherwise('/xlspaceship/welcome');
     }
 );
 
@@ -153,4 +158,8 @@ if (!window.repeat) {
 
         return r;
     };
+}
+
+function randomIntFromInterval(min, max) {
+    return Math.floor(Math.random() * (max - min + 1) + min);
 }

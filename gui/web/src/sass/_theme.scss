@@ -104,3 +104,14 @@
         transform: rotate(359deg);
     }
 }
+
+.font-color-green {
+	color: green;
+}
+
+.xl-board {
+	.xl-board-board {
+		font-family: 'Courier New', Courier, monospace;
+		letter-spacing: 10px;
+	}
+}

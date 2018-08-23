@@ -17,7 +17,7 @@ func RandomGameID() string {
 }
 
 func RandomFirstPlayer() PlayerT {
-	if rand.Intn(1) == 0 {
+	if rand.Intn(2) == 0 {
 		return PlayerSelf
 	} else {
 		return PlayerOpponent

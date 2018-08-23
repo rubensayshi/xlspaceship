@@ -44,7 +44,6 @@ gulp.task('js:app', function() {
         .pipe(gulp.dest('./web/www/js/'));
 });
 
-// create a sass with and without dependancy on fontello
 gulp.task('sass', function() {
 
     return gulp.src('./web/src/sass/app.scss')
@@ -54,8 +53,8 @@ gulp.task('sass', function() {
 
 gulp.task('copyfonts', function() {
 
-    return gulp.src(['./web/src/font/*', './web/src/font/**/*'])
-        .pipe(gulp.dest('./web/www/font'));
+    return gulp.src(['./web/src/lib/bootstrap-sass/assets/fonts/**/*'])
+        .pipe(gulp.dest('./web/www/fonts'));
 });
 
 gulp.task('copyimages', function() {
