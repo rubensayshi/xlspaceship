@@ -131,6 +131,7 @@ func (s *XLSpaceship) FireSalvo(game *ssgame.Game, salvo ssgame.CoordsGroup) (*S
 		return nil, errors.Wrapf(err, "Failed to fire salvo")
 	}
 
+	// mark result on our end
 	salvoRes := make([]*ssgame.ShotResult, 0, len(res.Salvo))
 	for coordsStr, shotResStr := range res.Salvo {
 		coords, err := ssgame.CoordsFromString(coordsStr)
@@ -150,14 +151,11 @@ func (s *XLSpaceship) FireSalvo(game *ssgame.Game, salvo ssgame.CoordsGroup) (*S
 
 	game.PlayerTurn = ssgame.PlayerOpponent
 
-	// @TODO
-	win := false
+	_, win := res.Game.(GameWonResponse)
 	if win {
 		game.Status = ssgame.GameStatusDone
-		game.PlayerWon = ssgame.PlayerOpponent
+		game.PlayerWon = ssgame.PlayerSelf
 	}
-
-	// @TODO: mark result on our end
 
 	return ReceiveSalvoResponseFromSalvoResult(salvoRes, s, game), nil
 }

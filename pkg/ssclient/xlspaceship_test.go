@@ -95,7 +95,7 @@ func TestXLSpaceship_ReceiveSalvo(t *testing.T) {
 		"2x0": "kill",
 	}, salvoRes.Salvo)
 
-	assert.Equal("testplayer-2", salvoRes.Game.(ReceiveSalvoWonResponseGame).Won)
+	assert.Equal("testplayer-2", salvoRes.Game.(GameWonResponse).Won)
 }
 
 func TestXLSpaceship_InitNewGame(t *testing.T) {
@@ -193,6 +193,8 @@ func TestXLSpaceship_FireSalvo(t *testing.T) {
 		"................",
 	}, status.Opponent.Board)
 
+	assert.Equal("testplayer-2", status.Game.(GamePlayerTurnResponse).PlayerTurn)
+
 	mockRequester.AssertExpectations(t)
 }
 
@@ -226,7 +228,7 @@ func TestXLSpaceship_FireSalvoWin(t *testing.T) {
 			"0x0": "hit",
 			"1x1": "kill",
 		},
-		Game: ReceiveSalvoWonResponseGame{
+		Game: GameWonResponse{
 			Won: "testplayer-1",
 		},
 	}, nil)
@@ -261,7 +263,7 @@ func TestXLSpaceship_FireSalvoWin(t *testing.T) {
 		"................",
 	}, status.Opponent.Board)
 
-	// @TODO: assert win
+	assert.Equal("testplayer-1", status.Game.(GameWonResponse).Won)
 
 	mockRequester.AssertExpectations(t)
 }
