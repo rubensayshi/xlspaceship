@@ -41,11 +41,11 @@ func NewXLSpaceship(playerID string, playerName string, host string, port int) *
 	return s
 }
 
-func (s *XLSpaceship) EnableCheatMode() {
-	s.cheat = true
+func (xl *XLSpaceship) EnableCheatMode() {
+	xl.cheat = true
 }
 
-func (s *XLSpaceship) NewGame(req *NewGameRequest) (*NewGameResponse, error) {
+func (xl *XLSpaceship) NewGame(req *NewGameRequest) (*NewGameResponse, error) {
 	opponent := &ssgame.Player{
 		PlayerID:     req.UserID,
 		FullName:     req.FullName,
@@ -58,26 +58,26 @@ func (s *XLSpaceship) NewGame(req *NewGameRequest) (*NewGameResponse, error) {
 		return nil, err
 	}
 
-	s.games[game.GameID] = game
+	xl.games[game.GameID] = game
 
-	res := NewGameResponseFromGame(s, game)
+	res := NewGameResponseFromGame(xl, game)
 	return res, nil
 }
 
-func (s *XLSpaceship) InitNewGame(req *InitGameRequest) (string, error) {
+func (xl *XLSpaceship) InitNewGame(req *InitGameRequest) (string, error) {
 	newGameReq := &NewGameRequest{
-		UserID:            s.Player.PlayerID,
-		FullName:          s.Player.FullName,
-		SpaceshipProtocol: SpaceshipProtocol{s.Player.ProtocolHost, s.Player.ProtocolPort},
+		UserID:            xl.Player.PlayerID,
+		FullName:          xl.Player.FullName,
+		SpaceshipProtocol: SpaceshipProtocol{xl.Player.ProtocolHost, xl.Player.ProtocolPort},
 	}
 
-	newGameRes, err := s.requester.NewGame(req.SpaceshipProtocol, newGameReq)
+	newGameRes, err := xl.requester.NewGame(req.SpaceshipProtocol, newGameReq)
 	if err != nil {
 		return "", errors.Wrapf(err, "Failed to init new game")
 	}
 
 	firstPlayer := ssgame.PlayerSelf
-	if newGameRes.Starting != s.Player.PlayerID {
+	if newGameRes.Starting != xl.Player.PlayerID {
 		firstPlayer = ssgame.PlayerOpponent
 	}
 
@@ -93,31 +93,31 @@ func (s *XLSpaceship) InitNewGame(req *InitGameRequest) (string, error) {
 		return "", errors.Wrapf(err, "Failed to init new game")
 	}
 
-	s.games[game.GameID] = game
+	xl.games[game.GameID] = game
 
 	return game.GameID, nil
 }
 
-func (s *XLSpaceship) GameStatus(gameID string) (*GameStatusResponse, bool) {
-	game, ok := s.games[gameID]
+func (xl *XLSpaceship) GameStatus(gameID string) (*GameStatusResponse, bool) {
+	game, ok := xl.games[gameID]
 	if !ok {
 		return nil, false
 	}
 
-	res := GameStatusResponseFromGame(s, game)
+	res := GameStatusResponseFromGame(xl, game)
 
 	return res, true
 }
 
-func (s *XLSpaceship) FireSalvo(game *ssgame.Game, salvo ssgame.CoordsGroup) (*SalvoResponse, bool, error) {
+func (xl *XLSpaceship) FireSalvo(game *ssgame.Game, salvo ssgame.CoordsGroup) (*SalvoResponse, bool, error) {
 	// check that we're not cheating
-	if !s.cheat && len(salvo) > game.SelfBoard.CountShipsAlive() {
+	if !xl.cheat && len(salvo) > game.SelfBoard.CountShipsAlive() {
 		return nil, false, errors.Errorf("More shots than ships alive (%d)", game.SelfBoard.CountShipsAlive())
 	}
 
 	// if the game is already done then we create a mock response with misses
 	if game.Status == ssgame.GameStatusDone {
-		res, err := s.FireSalvoGameFinished(game, salvo)
+		res, err := xl.FireSalvoGameFinished(game, salvo)
 		if err != nil {
 			return nil, false, errors.Wrapf(err, "Failed to fire salvo")
 		}
@@ -133,7 +133,7 @@ func (s *XLSpaceship) FireSalvo(game *ssgame.Game, salvo ssgame.CoordsGroup) (*S
 		req.Salvo[i] = salvo.String()
 	}
 
-	res, err := s.requester.ReceiveSalvo(SpaceshipProtocol{
+	res, err := xl.requester.ReceiveSalvo(SpaceshipProtocol{
 		Hostname: game.Opponent.ProtocolHost,
 		Port:     game.Opponent.ProtocolPort,
 	}, game.GameID, req)
@@ -166,10 +166,10 @@ func (s *XLSpaceship) FireSalvo(game *ssgame.Game, salvo ssgame.CoordsGroup) (*S
 		game.PlayerWon = ssgame.PlayerSelf
 	}
 
-	return ReceiveSalvoResponseFromSalvoResult(salvoRes, s, game), false, nil
+	return ReceiveSalvoResponseFromSalvoResult(salvoRes, xl, game), false, nil
 }
 
-func (s *XLSpaceship) FireSalvoGameFinished(game *ssgame.Game, salvo ssgame.CoordsGroup) (*SalvoResponse, error) {
+func (xl *XLSpaceship) FireSalvoGameFinished(game *ssgame.Game, salvo ssgame.CoordsGroup) (*SalvoResponse, error) {
 	salvoRes := make([]*ssgame.ShotResult, len(salvo))
 	for i, shot := range salvo {
 		salvoRes[i] = &ssgame.ShotResult{
@@ -178,18 +178,18 @@ func (s *XLSpaceship) FireSalvoGameFinished(game *ssgame.Game, salvo ssgame.Coor
 		}
 	}
 
-	return ReceiveSalvoResponseFromSalvoResult(salvoRes, s, game), nil
+	return ReceiveSalvoResponseFromSalvoResult(salvoRes, xl, game), nil
 }
 
-func (s *XLSpaceship) ReceiveSalvo(game *ssgame.Game, salvo ssgame.CoordsGroup) (*SalvoResponse, bool, error) {
+func (xl *XLSpaceship) ReceiveSalvo(game *ssgame.Game, salvo ssgame.CoordsGroup) (*SalvoResponse, bool, error) {
 	// check that we're not cheating
-	if !s.cheat && len(salvo) > game.OpponentBoard.CountShipsAlive() {
+	if !xl.cheat && len(salvo) > game.OpponentBoard.CountShipsAlive() {
 		return nil, false, errors.Errorf("More shots than ships alive (%d)", game.OpponentBoard.CountShipsAlive())
 	}
 
 	// if the game is already done then we create a mock response with misses
 	if game.Status == ssgame.GameStatusDone {
-		res, err := s.ReceiveSalvoGameFinished(game, salvo)
+		res, err := xl.ReceiveSalvoGameFinished(game, salvo)
 		if err != nil {
 			return nil, false, errors.Wrapf(err, "Failed to fire salvo")
 		}
@@ -205,10 +205,10 @@ func (s *XLSpaceship) ReceiveSalvo(game *ssgame.Game, salvo ssgame.CoordsGroup) 
 		game.PlayerWon = ssgame.PlayerOpponent
 	}
 
-	return ReceiveSalvoResponseFromSalvoResult(salvoRes, s, game), false, nil
+	return ReceiveSalvoResponseFromSalvoResult(salvoRes, xl, game), false, nil
 }
 
-func (s *XLSpaceship) ReceiveSalvoGameFinished(game *ssgame.Game, salvo ssgame.CoordsGroup) (*SalvoResponse, error) {
+func (xl *XLSpaceship) ReceiveSalvoGameFinished(game *ssgame.Game, salvo ssgame.CoordsGroup) (*SalvoResponse, error) {
 	salvoRes := make([]*ssgame.ShotResult, len(salvo))
 	for i, shot := range salvo {
 		salvoRes[i] = &ssgame.ShotResult{
@@ -217,7 +217,7 @@ func (s *XLSpaceship) ReceiveSalvoGameFinished(game *ssgame.Game, salvo ssgame.C
 		}
 	}
 
-	return ReceiveSalvoResponseFromSalvoResult(salvoRes, s, game), nil
+	return ReceiveSalvoResponseFromSalvoResult(salvoRes, xl, game), nil
 }
 
 // Helper function to do PUT requests because http builtin only has helpers for GET and POST >_>
