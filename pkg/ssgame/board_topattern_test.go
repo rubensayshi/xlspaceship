@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestBoardToPattern(t *testing.T) {
+func TestBoard_ToPatternBoard(t *testing.T) {
 	assert := require.New(t)
 
 	pattern := []string{
@@ -30,12 +30,12 @@ func TestBoardToPattern(t *testing.T) {
 		"...............-",
 	}
 
-	board, err := BoardFromPattern(pattern)
+	board := NewOpponentBoard()
+	err := FillBoardFromPattern(board.BaseBoard, pattern)
 	assert.NoError(err)
 	assert.NotNil(board)
 	assert.Equal(8, len(board.hits))
 	assert.Equal(8, len(board.misses))
-	assert.Equal(0, len(board.spaceships))
 
 	assert.Equal(pattern, board.ToPattern())
 
@@ -64,7 +64,7 @@ func TestBoardToPatternWithShipsNoMarks(t *testing.T) {
 		"..**............",
 	}
 
-	board, err := BoardFromPattern(BlankBoardPattern())
+	board, err := NewBlankSelfBoard()
 	assert.NoError(err)
 	assert.NotNil(board)
 	assert.Equal(0, len(board.hits))
@@ -129,7 +129,8 @@ func TestBoardToPatternWithShipsAndMarks(t *testing.T) {
 		"..**...........-",
 	}
 
-	board, err := BoardFromPattern(pattern)
+	board := NewSelfBoard()
+	err := FillBoardFromPattern(board.BaseBoard, pattern)
 	assert.NoError(err)
 	assert.NotNil(board)
 

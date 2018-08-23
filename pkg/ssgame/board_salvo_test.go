@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func NewBasicTestBoardWithSpaceship(assert *require.Assertions) *Board {
-	board, err := BoardFromPattern(BlankBoardPattern())
+func NewBasicTestBoardWithSpaceship(assert *require.Assertions) *SelfBoard {
+	board, err := NewBlankSelfBoard()
 	assert.NoError(err)
 
 	spaceship, err := SpaceshipFromPattern([]string{
@@ -98,7 +98,7 @@ func TestBoard_ApplyShotKillTwice(t *testing.T) {
 func TestBoard_ApplyShotStatus(t *testing.T) {
 	assert := require.New(t)
 
-	board, err := BoardFromPattern(BlankBoardPattern())
+	board, err := NewBlankOpponentBoard()
 	assert.NoError(err)
 
 	board.ApplyShotStatus(&Coords{2, 0}, ShotStatusHit)

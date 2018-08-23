@@ -15,7 +15,7 @@ import (
 func TestNewRandomBoard(t *testing.T) {
 	assert := require.New(t)
 
-	_, err := NewRandomBoard(SpaceshipsSetForBaseGame)
+	_, err := NewRandomSelfBoard(SpaceshipsSetForBaseGame)
 	assert.NoError(err)
 }
 
@@ -110,17 +110,17 @@ func TestNewRandomBoardTooMany1(t *testing.T) {
 	}
 
 	// first board should fail with this seed
-	board, err := newRandomBoard(ManySpaceships)
+	board, err := newRandomSelfBoard(ManySpaceships)
 	assert.NoError(err)
 	assert.Nil(board)
 
 	// second board should also fail with this seed
-	board, err = newRandomBoard(ManySpaceships)
+	board, err = newRandomSelfBoard(ManySpaceships)
 	assert.NoError(err)
 	assert.Nil(board)
 
 	// third board should pass with this seed
-	board, err = newRandomBoard(ManySpaceships)
+	board, err = newRandomSelfBoard(ManySpaceships)
 	assert.NoError(err)
 	assert.NotNil(board)
 }
@@ -153,7 +153,7 @@ func TestNewRandomBoardTooMany2(t *testing.T) {
 		SpaceshipPatternSClass,
 	}
 
-	board, err := NewRandomBoard(ManySpaceships)
+	board, err := NewRandomSelfBoard(ManySpaceships)
 	assert.NoError(err)
 	assert.NotNil(board)
 }

@@ -9,26 +9,7 @@ import (
 func TestBoard_AddSpaceshipOnCoordsSimple0x0(t *testing.T) {
 	assert := require.New(t)
 
-	pattern := []string{
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-	}
-
-	board, err := BoardFromPattern(pattern)
+	board, err := NewBlankSelfBoard()
 	assert.NoError(err)
 
 	spaceship, err := SpaceshipFromPattern([]string{
@@ -43,26 +24,7 @@ func TestBoard_AddSpaceshipOnCoordsSimple0x0(t *testing.T) {
 func TestBoard_AddSpaceshipOnCoordsSimple13x15(t *testing.T) {
 	assert := require.New(t)
 
-	pattern := []string{
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-	}
-
-	board, err := BoardFromPattern(pattern)
+	board, err := NewBlankSelfBoard()
 	assert.NoError(err)
 
 	spaceship, err := SpaceshipFromPattern([]string{
@@ -77,26 +39,7 @@ func TestBoard_AddSpaceshipOnCoordsSimple13x15(t *testing.T) {
 func TestBoard_AddSpaceshipOnCoordsSimpleVert15x13(t *testing.T) {
 	assert := require.New(t)
 
-	pattern := []string{
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-	}
-
-	board, err := BoardFromPattern(pattern)
+	board, err := NewBlankSelfBoard()
 	assert.NoError(err)
 
 	spaceship, err := SpaceshipFromPattern([]string{
@@ -113,26 +56,7 @@ func TestBoard_AddSpaceshipOnCoordsSimpleVert15x13(t *testing.T) {
 func TestBoard_AddSpaceshipOnCoordsInvalidSimple14x15(t *testing.T) {
 	assert := require.New(t)
 
-	pattern := []string{
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-	}
-
-	board, err := BoardFromPattern(pattern)
+	board, err := NewBlankSelfBoard()
 	assert.NoError(err)
 
 	spaceship, err := SpaceshipFromPattern([]string{
@@ -147,26 +71,7 @@ func TestBoard_AddSpaceshipOnCoordsInvalidSimple14x15(t *testing.T) {
 func TestBoard_AddSpaceshipOnCoordsInvalidSimpleVert15x14(t *testing.T) {
 	assert := require.New(t)
 
-	pattern := []string{
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-	}
-
-	board, err := BoardFromPattern(pattern)
+	board, err := NewBlankSelfBoard()
 	assert.NoError(err)
 
 	spaceship, err := SpaceshipFromPattern([]string{
@@ -183,26 +88,7 @@ func TestBoard_AddSpaceshipOnCoordsInvalidSimpleVert15x14(t *testing.T) {
 func TestBoard_AddSpaceshipOnCoordsInvalidOverlap(t *testing.T) {
 	assert := require.New(t)
 
-	pattern := []string{
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-	}
-
-	board, err := BoardFromPattern(pattern)
+	board, err := NewBlankSelfBoard()
 	assert.NoError(err)
 
 	spaceship1, err := SpaceshipFromPattern([]string{
@@ -227,26 +113,7 @@ func TestBoard_AddSpaceshipOnCoordsInvalidOverlap(t *testing.T) {
 func TestBoard_AddSpaceshipOnCoordsInvalidOverlap3X0(t *testing.T) {
 	assert := require.New(t)
 
-	pattern := []string{
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-	}
-
-	board, err := BoardFromPattern(pattern)
+	board, err := NewBlankSelfBoard()
 	assert.NoError(err)
 
 	spaceship1, err := SpaceshipFromPattern([]string{
@@ -271,26 +138,7 @@ func TestBoard_AddSpaceshipOnCoordsInvalidOverlap3X0(t *testing.T) {
 func TestBoard_AddSpaceshipOnCoordsInvalidOverlapWingerB(t *testing.T) {
 	assert := require.New(t)
 
-	pattern := []string{
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-		"................",
-	}
-
-	board, err := BoardFromPattern(pattern)
+	board, err := NewBlankSelfBoard()
 	assert.NoError(err)
 
 	spaceship1, err := SpaceshipFromPattern(SpaceshipPatternWinger)

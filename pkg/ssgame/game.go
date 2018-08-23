@@ -50,19 +50,19 @@ type Game struct {
 	GameID        string
 	Opponent      *Player
 	Status        GameStatus
-	SelfBoard     *Board
-	OpponentBoard *Board
+	SelfBoard     *SelfBoard
+	OpponentBoard *OpponentBoard
 	PlayerTurn    PlayerT
 	PlayerWon     PlayerT
 }
 
 func CreateNewGame(opponent *Player) (*Game, error) {
-	selfBoard, err := NewRandomBoard(SpaceshipsSetForBaseGame)
+	selfBoard, err := NewRandomSelfBoard(SpaceshipsSetForBaseGame)
 	if err != nil {
 		return nil, err
 	}
 
-	opponentBoard, err := BoardFromPattern(BlankBoardPattern())
+	opponentBoard, err := NewBlankOpponentBoard()
 	if err != nil {
 		return nil, err
 	}
@@ -83,12 +83,12 @@ func CreateNewGame(opponent *Player) (*Game, error) {
 }
 
 func InitNewGame(gameID string, opponent *Player, firstPlayer PlayerT) (*Game, error) {
-	selfBoard, err := NewRandomBoard(SpaceshipsSetForBaseGame)
+	selfBoard, err := NewRandomSelfBoard(SpaceshipsSetForBaseGame)
 	if err != nil {
 		return nil, err
 	}
 
-	opponentBoard, err := BoardFromPattern(BlankBoardPattern())
+	opponentBoard, err := NewBlankOpponentBoard()
 	if err != nil {
 		return nil, err
 	}

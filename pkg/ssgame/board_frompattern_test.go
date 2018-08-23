@@ -9,7 +9,7 @@ import (
 func TestBoardFromPatternEmpty(t *testing.T) {
 	assert := require.New(t)
 
-	board, err := BoardFromPattern(BlankBoardPattern())
+	board, err := NewBlankSelfBoard()
 	assert.NoError(err)
 	assert.NotNil(board)
 	assert.Equal(0, len(board.hits))
@@ -20,7 +20,8 @@ func TestBoardFromPatternEmpty(t *testing.T) {
 func TestBoardFromPatternWithMarks(t *testing.T) {
 	assert := require.New(t)
 
-	board, err := BoardFromPattern([]string{
+	board := &BaseBoard{}
+	err := FillBoardFromPattern(board, []string{
 		"X-*.............",
 		"................",
 		"................",
@@ -45,7 +46,8 @@ func TestBoardFromPatternWithMarks(t *testing.T) {
 func TestBoardFromPatternInvalidRows(t *testing.T) {
 	assert := require.New(t)
 
-	_, err := BoardFromPattern([]string{
+	board1 := &BaseBoard{}
+	err1 := FillBoardFromPattern(board1, []string{
 		"................",
 		"................",
 		"................",
@@ -62,9 +64,10 @@ func TestBoardFromPatternInvalidRows(t *testing.T) {
 		"................",
 		"................",
 	})
-	assert.Error(err)
+	assert.Error(err1)
 
-	_, err = BoardFromPattern([]string{
+	board2 := &BaseBoard{}
+	err2 := FillBoardFromPattern(board2, []string{
 		"................",
 		"................",
 		"................",
@@ -83,7 +86,7 @@ func TestBoardFromPatternInvalidRows(t *testing.T) {
 		"................",
 		"................",
 	})
-	assert.Error(err)
+	assert.Error(err2)
 }
 
 func TestBoardFromPatternInvalidCols(t *testing.T) {
@@ -115,7 +118,8 @@ func TestBoardFromPatternInvalidCols(t *testing.T) {
 		for _, invalidRow := range invalidRows {
 			pattern[row] = invalidRow
 
-			_, err := BoardFromPattern(pattern)
+			board := &BaseBoard{}
+			err := FillBoardFromPattern(board, pattern)
 			assert.Error(err)
 		}
 	}
@@ -137,7 +141,8 @@ func TestBoardFromPatternInvalidChars(t *testing.T) {
 		for _, invalidRow := range invalidRows {
 			pattern[row] = invalidRow
 
-			_, err := BoardFromPattern(pattern)
+			board := &BaseBoard{}
+			err := FillBoardFromPattern(board, pattern)
 			assert.Error(err)
 		}
 	}
@@ -146,7 +151,8 @@ func TestBoardFromPatternInvalidChars(t *testing.T) {
 func TestBoardFromPatternHits(t *testing.T) {
 	assert := require.New(t)
 
-	board, err := BoardFromPattern([]string{
+	board := &BaseBoard{}
+	err := FillBoardFromPattern(board, []string{
 		"X...............",
 		".X..............",
 		"..X.............",
@@ -168,13 +174,13 @@ func TestBoardFromPatternHits(t *testing.T) {
 	assert.NotNil(board)
 	assert.Equal(16, len(board.hits))
 	assert.Equal(0, len(board.misses))
-	assert.Equal(0, len(board.spaceships))
 }
 
 func TestBoardFromPatternMisses(t *testing.T) {
 	assert := require.New(t)
 
-	board, err := BoardFromPattern([]string{
+	board := &BaseBoard{}
+	err := FillBoardFromPattern(board, []string{
 		"-...............",
 		".-..............",
 		"..-.............",
@@ -196,13 +202,13 @@ func TestBoardFromPatternMisses(t *testing.T) {
 	assert.NotNil(board)
 	assert.Equal(0, len(board.hits))
 	assert.Equal(16, len(board.misses))
-	assert.Equal(0, len(board.spaceships))
 }
 
 func TestBoardFromPatternMixed(t *testing.T) {
 	assert := require.New(t)
 
-	board, err := BoardFromPattern([]string{
+	board := &BaseBoard{}
+	err := FillBoardFromPattern(board, []string{
 		"X...............",
 		".-..............",
 		"..X.............",
@@ -224,5 +230,4 @@ func TestBoardFromPatternMixed(t *testing.T) {
 	assert.NotNil(board)
 	assert.Equal(8, len(board.hits))
 	assert.Equal(8, len(board.misses))
-	assert.Equal(0, len(board.spaceships))
 }

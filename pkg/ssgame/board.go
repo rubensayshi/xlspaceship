@@ -29,16 +29,24 @@ func BlankBoardPattern() []string {
 	}
 }
 
-type Board struct {
-	spaceships []*Spaceship
-	hits       CoordsGroup
-	misses     CoordsGroup
+type BaseBoard struct {
+	hits   CoordsGroup
+	misses CoordsGroup
 }
 
-func NewRandomBoard(spaceships [][]string) (*Board, error) {
+type SelfBoard struct {
+	*BaseBoard
+	spaceships []*Spaceship
+}
+
+type OpponentBoard struct {
+	*BaseBoard
+}
+
+func NewRandomSelfBoard(spaceships [][]string) (*SelfBoard, error) {
 	// we retry to create a random board 100 times incase the spaceships didn't fit (should never happen with default board size and spaceships)
 	for i := 0; i < 100; i++ {
-		board, err := newRandomBoard(spaceships)
+		board, err := newRandomSelfBoard(spaceships)
 		if err != nil {
 			return nil, err
 		}
@@ -51,8 +59,11 @@ func NewRandomBoard(spaceships [][]string) (*Board, error) {
 	return nil, errors.New("Failed to create a random board")
 }
 
-func newRandomBoard(spaceships [][]string) (*Board, error) {
-	board := &Board{}
+func newRandomSelfBoard(spaceships [][]string) (*SelfBoard, error) {
+	board, err := NewBlankSelfBoard()
+	if err != nil {
+		return nil, err
+	}
 
 	for _, spaceshipPattern := range spaceships {
 		spaceship, err := SpaceshipFromPattern(spaceshipPattern)
@@ -71,30 +82,66 @@ func newRandomBoard(spaceships [][]string) (*Board, error) {
 	return board, nil
 }
 
-func BoardFromPattern(pattern []string) (*Board, error) {
+func newBaseBoard() *BaseBoard {
+	return &BaseBoard{
+		hits:   make(CoordsGroup, 0),
+		misses: make(CoordsGroup, 0),
+	}
+}
+
+func NewSelfBoard() *SelfBoard {
+	return &SelfBoard{
+		BaseBoard:  newBaseBoard(),
+		spaceships: make([]*Spaceship, 0),
+	}
+}
+
+func NewBlankSelfBoard() (*SelfBoard, error) {
+	board := NewSelfBoard()
+
+	err := FillBoardFromPattern(board.BaseBoard, BlankBoardPattern())
+	if err != nil {
+		return nil, err
+	}
+
+	return board, nil
+}
+
+func NewOpponentBoard() *OpponentBoard {
+	return &OpponentBoard{
+		BaseBoard: newBaseBoard(),
+	}
+}
+
+func NewBlankOpponentBoard() (*OpponentBoard, error) {
+	board := NewOpponentBoard()
+
+	err := FillBoardFromPattern(board.BaseBoard, BlankBoardPattern())
+	if err != nil {
+		return nil, err
+	}
+
+	return board, nil
+}
+
+func FillBoardFromPattern(board *BaseBoard, pattern []string) error {
 	// sanity check the input
 	if len(pattern) != ROWS {
-		return nil, errors.New("pattern incorrect amount of rows")
+		return errors.New("pattern incorrect amount of rows")
 	}
 
 	// sanity check the input
 	for _, row := range pattern {
 		if len(row) != COLS {
-			return nil, errors.New("pattern incorrect amount of cols")
+			return errors.New("pattern incorrect amount of cols")
 		}
 
 		// @TODO: is there a nicer way to do this with a builtin?
 		for _, char := range []byte(row) {
 			if char != byte(CoordsBlank) && char != byte(CoordsShip) && char != byte(CoordsHit) && char != byte(CoordsMiss) {
-				return nil, errors.New("pattern incorrect symbol for coords")
+				return errors.New("pattern incorrect symbol for coords")
 			}
 		}
-	}
-
-	board := &Board{
-		spaceships: make([]*Spaceship, 0),
-		hits:       make(CoordsGroup, 0),
-		misses:     make(CoordsGroup, 0),
 	}
 
 	// parse the input
@@ -115,22 +162,26 @@ func BoardFromPattern(pattern []string) (*Board, error) {
 		}
 	}
 
-	return board, nil
+	return nil
 }
 
-func (b *Board) String() string {
+func (b *OpponentBoard) String() string {
 	return fmt.Sprintf("%s", strings.Join(b.ToPattern(), "\n"))
 }
 
-func (b *Board) Spaceships() []*Spaceship {
+func (b *SelfBoard) String() string {
+	return fmt.Sprintf("%s", strings.Join(b.ToPattern(), "\n"))
+}
+
+func (b *SelfBoard) Spaceships() []*Spaceship {
 	return b.spaceships
 }
 
-func (b *Board) AllShipsDead() bool {
+func (b *SelfBoard) AllShipsDead() bool {
 	return b.CountShipsAlive() == 0
 }
 
-func (b *Board) CountShipsAlive() int {
+func (b *SelfBoard) CountShipsAlive() int {
 	i := 0
 	for _, spaceship := range b.spaceships {
 		if !spaceship.dead {
@@ -141,7 +192,7 @@ func (b *Board) CountShipsAlive() int {
 	return i
 }
 
-func (b *Board) ToPattern() []string {
+func (b *BaseBoard) buildBasePattern() [][]byte {
 	// @TODO: considering the board size is constant we could just have a const string to copy for this instead of building the blank state everytime
 	pattern := make([][]byte, ROWS)
 	for y, _ := range pattern {
@@ -152,13 +203,10 @@ func (b *Board) ToPattern() []string {
 		}
 	}
 
-	// add spaceships to the pattern
-	for _, spaceship := range b.spaceships {
-		for _, coords := range spaceship.coords {
-			pattern[coords.y][coords.x] = byte(CoordsShip)
-		}
-	}
+	return pattern
+}
 
+func (b *BaseBoard) applyHitsAndMissesToPattern(pattern [][]byte) {
 	// add hits to the pattern (will overwrite spaceship coords)
 	for _, hit := range b.hits {
 		pattern[hit.y][hit.x] = byte(CoordsHit)
@@ -168,7 +216,9 @@ func (b *Board) ToPattern() []string {
 	for _, miss := range b.misses {
 		pattern[miss.y][miss.x] = byte(CoordsMiss)
 	}
+}
 
+func (b *BaseBoard) patternToStrings(pattern [][]byte) []string {
 	// turn the byte arrays into strings
 	res := make([]string, ROWS)
 	for y, row := range pattern {
@@ -178,7 +228,31 @@ func (b *Board) ToPattern() []string {
 	return res
 }
 
-func (b *Board) AddSpaceship(spaceship *Spaceship) error {
+func (b *BaseBoard) ToPattern() []string {
+	pattern := b.buildBasePattern()
+	b.applyHitsAndMissesToPattern(pattern)
+
+	return b.patternToStrings(pattern)
+}
+
+func (b *SelfBoard) applyShipsToPattern(pattern [][]byte) {
+	// add spaceships to the pattern
+	for _, spaceship := range b.spaceships {
+		for _, coords := range spaceship.coords {
+			pattern[coords.y][coords.x] = byte(CoordsShip)
+		}
+	}
+}
+
+func (b *SelfBoard) ToPattern() []string {
+	pattern := b.buildBasePattern()
+	b.applyShipsToPattern(pattern)
+	b.applyHitsAndMissesToPattern(pattern)
+
+	return b.patternToStrings(pattern)
+}
+
+func (b *SelfBoard) AddSpaceship(spaceship *Spaceship) error {
 	N := 10000
 	// we'll attempt to add the spaceship on random locations until we succeed to reach N
 	// @TODO: this could be heavily optimized as we know we don't have to try adding a spaceship of 3 high on Y > 15 - 3
@@ -204,7 +278,7 @@ func (b *Board) AddSpaceship(spaceship *Spaceship) error {
 	return errors.New("Failed to add spaceship, seems impossible")
 }
 
-func (b *Board) AddSpaceshipOnCoords(spaceship *Spaceship) error {
+func (b *SelfBoard) AddSpaceshipOnCoords(spaceship *Spaceship) error {
 	// @TODO: we should store coords of existing spaceships so we don't have to loop over them
 	for _, coords := range spaceship.coords {
 		// check spaceship stays within bounds
@@ -229,7 +303,7 @@ func (b *Board) AddSpaceshipOnCoords(spaceship *Spaceship) error {
 	return nil
 }
 
-func (b *Board) ReceiveSalvo(salvo CoordsGroup) []*ShotResult {
+func (b *SelfBoard) ReceiveSalvo(salvo CoordsGroup) []*ShotResult {
 	res := make([]*ShotResult, len(salvo))
 	for i, shot := range salvo {
 		res[i] = b.ApplyShot(shot)
@@ -238,7 +312,7 @@ func (b *Board) ReceiveSalvo(salvo CoordsGroup) []*ShotResult {
 	return res
 }
 
-func (b *Board) ApplyShot(shot *Coords) *ShotResult {
+func (b *SelfBoard) ApplyShot(shot *Coords) *ShotResult {
 	// @TODO: same as with AddSpacehipOnCoords it would be a good optimization to store the coords of the ships so we don't have to loop over them
 	status := ShotStatusMiss
 
@@ -276,7 +350,7 @@ func (b *Board) ApplyShot(shot *Coords) *ShotResult {
 	return res
 }
 
-func (b *Board) ApplyShotStatus(shot *Coords, status ShotStatus) {
+func (b *OpponentBoard) ApplyShotStatus(shot *Coords, status ShotStatus) {
 	switch status {
 	case ShotStatusMiss:
 		b.misses = append(b.misses, shot)
