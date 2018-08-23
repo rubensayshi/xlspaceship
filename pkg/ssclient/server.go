@@ -6,23 +6,58 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/rakyll/statik/fs"
 	"github.com/rubensayshi/xlspaceship/pkg/ssgame"
+
+	"time"
+
+	"sync"
+
+	"github.com/pkg/browser"
+	_ "github.com/rubensayshi/xlspaceship/statik" // registers our static files to serve
 )
 
-func Serve(s *XLSpaceship, port int) {
+func Serve(s *XLSpaceship, openGUI bool, port int) {
 	r := mux.NewRouter()
 
+	// add go routing handlers
 	AddNewGameHandler(s, r)
 	AddInitGameHandler(s, r)
 	AddGameStatusHandler(s, r)
 	AddReceiveSalvoHandler(s, r)
 	AddFireSalvoHandler(s, r)
 
-	fmt.Printf("Serve :%d \n", port)
-
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", port), r); err != nil {
+	// open statik bundle of our static files
+	statikFS, err := fs.New()
+	if err != nil {
 		panic(err)
 	}
+
+	// add file server for statik
+	r.PathPrefix("/gui/").Handler(http.StripPrefix("/gui/", http.FileServer(statikFS)))
+
+	wg := sync.WaitGroup{}
+
+	// start serving
+	wg.Add(1)
+	go func() {
+		fmt.Printf("Serve :%d \n", port)
+		if err := http.ListenAndServe(fmt.Sprintf(":%d", port), r); err != nil {
+			panic(err)
+		}
+
+		wg.Done()
+	}()
+
+	if openGUI {
+		go func() {
+			<-time.After(time.Millisecond * 100)
+			browser.OpenURL(fmt.Sprintf("http://localhost:%d/gui/game.html", port))
+		}()
+	}
+
+	// if waitgroup finishes then we quit
+	wg.Wait()
 }
 
 func AddNewGameHandler(s *XLSpaceship, r *mux.Router) {

@@ -8,3 +8,6 @@ import:
 - package: github.com/gorilla/mux
   version: ^1.6.2
 - package: github.com/wadey/gocovmerge
+- package: github.com/rakyll/statik
+  version: ^0.1.4
+- package: github.com/pkg/browser

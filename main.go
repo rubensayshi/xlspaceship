@@ -64,6 +64,7 @@ var fPort = flag.Int("port", maybeGetEnvInt("PORT", 8080), "port to serve the RE
 var fPlayerID = flag.String("playerID", maybeGetEnv("PLAYERID", "player-1"), "your player ID")
 var fPlayerName = flag.String("playerName", maybeGetEnv("PLAYERNAME", "Player 1"), "your player name")
 var fCheat = flag.Bool("cheat", maybeGetEnvBool("CHEAT", false), "enable cheat mode")
+var fDontOpenGui = flag.Bool("dontopengui", maybeGetEnvBool("DONTOPENGUI", false), "don't pop open the GUI when the process starts")
 
 func main() {
 	fmt.Printf("main \n")
@@ -74,5 +75,5 @@ func main() {
 		s.EnableCheatMode()
 	}
 
-	ssclient.Serve(s, *fPort)
+	ssclient.Serve(s, !*fDontOpenGui, *fPort)
 }

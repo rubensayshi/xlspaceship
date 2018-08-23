@@ -12,7 +12,10 @@ coverage:
 	go run vendor/github.com/wadey/gocovmerge/gocovmerge.go coverage1.out coverage2.out > coverage.out
 	go tool cover -func=coverage.out
 
-build: build-linux build-windows
+build-public:
+	go run vendor/github.com/rakyll/statik/statik.go -src=./public/ -f -m -Z
+
+build: build-public build-linux build-windows
 
 build-windows:
 	 GOOS=windows GOARCH=amd64 go build -o bin/xlspaceship-win64.exe main.go
