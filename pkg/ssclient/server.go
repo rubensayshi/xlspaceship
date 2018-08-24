@@ -43,9 +43,15 @@ func AddWhoAmIGameHandler(s *XLSpaceship, r *mux.Router) {
 	r.HandleFunc("/xl-spaceship/user", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("%s: %s \n", r.Method, r.RequestURI)
 
-		res := &WhoAmIResponse{}
-		res.UserID = s.Player.PlayerID
-		res.FullName = s.Player.FullName
+		res := &WhoAmIResponse{
+			UserID:   s.Player.PlayerID,
+			FullName: s.Player.FullName,
+			Games:    make([]string, 0, len(s.games)),
+		}
+
+		for gameID, _ := range s.games {
+			res.Games = append(res.Games, gameID)
+		}
 
 		resJson, err := json.MarshalIndent(res, "", "    ")
 		if err != nil {

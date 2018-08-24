@@ -17,6 +17,7 @@ import (
 	"github.com/rubensayshi/xlspaceship/pkg/ssclient"
 )
 
+// helper to get int from `env` var or use default
 func maybeGetEnvInt(env string, dflt int) int {
 	val := os.Getenv(env)
 	if val == "" {
@@ -31,6 +32,7 @@ func maybeGetEnvInt(env string, dflt int) int {
 	return int(intval)
 }
 
+// helper to get bool from `env` var (parsing string to bool) or use default
 func maybeGetEnvBool(env string, dflt bool) bool {
 	val := os.Getenv(env)
 	if val == "" {
@@ -55,6 +57,7 @@ func maybeGetEnvBool(env string, dflt bool) bool {
 	return dflt
 }
 
+// helper to get string from `env` var or use default
 func maybeGetEnv(env string, dflt string) string {
 	val := os.Getenv(env)
 	if val == "" {
@@ -64,7 +67,7 @@ func maybeGetEnv(env string, dflt string) string {
 	return val
 }
 
-// define flags for CLI
+// define flags for CLI, most with env var fallback
 var fPort = flag.Int("port", maybeGetEnvInt("PORT", 8080), "port to serve the REST API on")
 var fPlayerID = flag.String("playerID", maybeGetEnv("PLAYERID", "player-1"), "your player ID")
 var fPlayerName = flag.String("playerName", maybeGetEnv("PLAYERNAME", "Player 1"), "your player name")

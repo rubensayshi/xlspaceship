@@ -1,10 +1,14 @@
 angular.module('xlspaceship')
-    .controller('XLSpaceshipPlayCtrl', function($scope, $state, $stateParams, $http, $timeout) {
+    .controller('XLSpaceshipPlayCtrl', function($scope, $state, $stateParams, $http, $timeout, $interval) {
         $scope.refreshing = false;
         $scope.game = $scope.games[$stateParams.gameID];
 
+        // assign a random salvo to our input state
         $scope.salvo = randomSalvo();
 
+        /**
+         * generate a random shot
+         */
         function randomShot() {
             let x = randomIntFromInterval(0, 15);
             let y = randomIntFromInterval(0, 15);
@@ -12,6 +16,9 @@ angular.module('xlspaceship')
             return x.toString(16) + "x" + y.toString(16);
         }
 
+        /**
+         * generate a fresh random salvo
+         */
         function randomSalvo() {
             return {
                 shot1: randomShot(),
@@ -22,6 +29,9 @@ angular.module('xlspaceship')
             };
         }
 
+        /**
+         * refresh the game status
+         */
         function refresh() {
             $scope.refreshing = true;
 
@@ -36,6 +46,9 @@ angular.module('xlspaceship')
             });
         }
 
+        /**
+         * fire a salvo to the other player
+         */
         function fireSalvo() {
             $http.put("/xl-spaceship/user/game/" + $stateParams.gameID + "/fire", {
                 salvo: [$scope.salvo.shot1, $scope.salvo.shot2, $scope.salvo.shot3, $scope.salvo.shot4, $scope.salvo.shot5, ],
@@ -55,6 +68,7 @@ angular.module('xlspaceship')
         $scope.refresh = refresh;
         $scope.fireSalvo = fireSalvo;
 
+        // if we're missing the game data then attempt to refresh it, if it fails we goto welcome screen
         if (!$scope.game) {
             refresh()
                 .then(function(game) {
@@ -64,5 +78,11 @@ angular.module('xlspaceship')
                 })
             ;
         }
+
+        // setup interval to fetch fresh data
+        // @TODO: clear interval on $scope.$destroy
+        $interval(function() {
+            refresh();
+        }, 500);
     });
 

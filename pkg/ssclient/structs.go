@@ -8,8 +8,9 @@ type SpaceshipProtocol struct {
 }
 
 type WhoAmIResponse struct {
-	UserID   string `json:"user_id"`
-	FullName string `json:"full_name"`
+	UserID   string   `json:"user_id"`
+	FullName string   `json:"full_name"`
+	Games    []string `json:"games"`
 }
 
 type NewGameRequest struct {

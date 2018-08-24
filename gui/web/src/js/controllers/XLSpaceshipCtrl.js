@@ -9,11 +9,20 @@ angular.module('xlspaceship')
             port: "8090",
         };
 
+        /**
+         * fetch status about self, name, ID and list of games
+         */
         function whoami() {
             $http.get("/xl-spaceship/user")
                 .then(function(res) {
                     $scope.PLAYERID = res.data.user_id;
                     $scope.PLAYERNAME = res.data.full_name;
+
+                    angular.forEach(res.data.games, function(gameID) {
+                        refreshGame(gameID).then(function(game) {
+                            $scope.games[gameID] = game;
+                        });
+                    });
                 }, function(err) {
                     console.log(err);
                     alert(err.data || err);
@@ -22,6 +31,9 @@ angular.module('xlspaceship')
                 });
         }
 
+        /**
+         * challange another player
+         */
         function challange() {
             $http.post("/xl-spaceship/user/game/new", {
                 spaceship_protocol: {
@@ -43,12 +55,15 @@ angular.module('xlspaceship')
                 });
         }
 
+        /**
+         * refresh a game's data
+         */
         function refreshGame(gameID) {
             $scope.refreshing = true;
 
             return $http.get("/xl-spaceship/user/game/" + gameID)
                 .then(function(res) {
-                    console.log(res.data);
+                    console.log(res.data.game_id + ": " + (res.data.game.won || res.data.game.player_turn));
 
                     return res.data;
                 }, function(err) {
@@ -61,14 +76,20 @@ angular.module('xlspaceship')
         $scope.challange = challange;
         $scope.refreshGame = refreshGame;
 
+        // fetch self data straight away
         whoami();
 
+        // setup interval to fetch fresh data
         // @TODO: clear interval on $scope.$destroy
         $interval(function() {
+            whoami();
+
             angular.forEach($scope.games, function(game, gameID) {
-                refreshGame(gameID).then(function(game) {
-                    $scope.games[gameID] = game;
-                });
+                if (!game.won) {
+                    refreshGame(gameID).then(function (game) {
+                        $scope.games[gameID] = game;
+                    });
+                }
             });
-        }, 1000);
+        }, 500);
     });
