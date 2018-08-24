@@ -49,6 +49,25 @@ func TestXLSpaceship_NewGame(t *testing.T) {
 	assert.Equal("Test Player 1", res.FullName)
 }
 
+func TestXLSpaceship_NewGameSameUserID(t *testing.T) {
+	assert := require.New(t)
+
+	xl := NewXLSpaceship("testplayer-1", "Test Player 1", "notlocalhost", 1337)
+	assert.NotNil(xl)
+
+	req := &NewGameRequest{
+		UserID:   "testplayer-1",
+		FullName: "Test Player 1",
+		SpaceshipProtocol: SpaceshipProtocol{
+			Hostname: "notlocalhost2",
+			Port:     6666,
+		},
+	}
+
+	_, err := xl.NewGameRequest(req)
+	assert.Error(err)
+}
+
 func TestXLSpaceship_ReceiveSalvo(t *testing.T) {
 	assert := require.New(t)
 

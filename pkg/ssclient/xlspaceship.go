@@ -133,6 +133,10 @@ func (xl *XLSpaceship) NewGameRequest(req *NewGameRequest) (*NewGameResponse, er
 		ProtocolPort: req.SpaceshipProtocol.Port,
 	}
 
+	if xl.Player.PlayerID == opponent.PlayerID || xl.Player.FullName == opponent.FullName {
+		return nil, errors.Errorf("Failed to create new game: opponent has same user_id or fullname as player")
+	}
+
 	game, err := ssgame.CreateNewGame(xl.NewGameID(), opponent, xl.cheat)
 	if err != nil {
 		return nil, err
