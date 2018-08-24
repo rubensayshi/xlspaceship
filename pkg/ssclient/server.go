@@ -65,7 +65,7 @@ func AddWhoAmIGameHandler(xl *XLSpaceship, r *mux.Router) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
+		w.WriteHeader(http.StatusOK)
 		w.Write(resJson)
 	})
 }
@@ -219,7 +219,6 @@ func AddFireSalvoHandler(xl *XLSpaceship, r *mux.Router) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		// @TODO: set res.AlreadyFinished
 		if res.AlreadyFinished {
 			w.WriteHeader(http.StatusNotFound)
 		} else {
@@ -265,7 +264,6 @@ func AddReceiveSalvoHandler(xl *XLSpaceship, r *mux.Router) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		// @TODO: set res.AlreadyFinished
 		if res.AlreadyFinished {
 			w.WriteHeader(http.StatusNotFound)
 		} else {

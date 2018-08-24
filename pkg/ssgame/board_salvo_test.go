@@ -49,10 +49,14 @@ func TestBoard_ApplyShotHitTwice(t *testing.T) {
 	res := board.ApplyShot(&Coords{0, 0})
 	assert.NotNil(res)
 	assert.Equal(ShotStatusHit, res.ShotStatus)
+	assert.Equal(1, len(board.hits))
+	assert.Equal(0, len(board.misses))
 
 	res = board.ApplyShot(&Coords{0, 0})
 	assert.NotNil(res)
 	assert.Equal(ShotStatusMiss, res.ShotStatus)
+	assert.Equal(1, len(board.hits))
+	assert.Equal(0, len(board.misses))
 }
 
 func TestBoard_ApplyShotKill(t *testing.T) {

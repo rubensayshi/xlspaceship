@@ -323,7 +323,8 @@ func (b *SelfBoard) ApplyShot(shot *Coords) *ShotResult {
 		}
 	}
 
-	if status == ShotStatusMiss {
+	// store the miss, but only if it wasn't already stored as hit or miss
+	if status == ShotStatusMiss && !b.hits.Contains(shot) && !b.misses.Contains(shot) {
 		b.misses = append(b.misses, shot)
 	}
 

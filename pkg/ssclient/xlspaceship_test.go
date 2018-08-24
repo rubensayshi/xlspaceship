@@ -155,6 +155,8 @@ func TestXLSpaceship_ReceiveSalvoGameFinished(t *testing.T) {
 	// mark game done and make self winner
 	game.Status = ssgame.GameStatusDone
 	game.PlayerWon = ssgame.PlayerSelf
+	// already finished should supersede player turn check
+	game.PlayerTurn = ssgame.PlayerOpponent
 
 	salvoRes, alreadyFinish, err := xl.receiveSalvo(game, salvo)
 	assert.NoError(err)
@@ -226,6 +228,9 @@ func TestXLSpaceship_FireSalvo(t *testing.T) {
 
 	game := xl.games[newGameRes.GameID]
 
+	// make it our turn
+	game.PlayerTurn = ssgame.PlayerSelf
+
 	mockRequester.On("ReceiveSalvo", ssProtocol, ReceiveSalvoRequest{
 		GameID: "match-testplayer-1-1",
 		Salvo:  []string{"0x0", "1x1"},
@@ -294,6 +299,9 @@ func TestXLSpaceship_FireSalvoWin(t *testing.T) {
 	assert.NotNil(newGameRes)
 
 	game := xl.games[newGameRes.GameID]
+
+	// make it our turn
+	game.PlayerTurn = ssgame.PlayerSelf
 
 	mockRequester.On("ReceiveSalvo", ssProtocol, ReceiveSalvoRequest{
 		GameID: "match-testplayer-1-1",
@@ -370,6 +378,8 @@ func TestXLSpaceship_FireSalvoAlreadyFinished(t *testing.T) {
 	// mark game done and make self winner
 	game.Status = ssgame.GameStatusDone
 	game.PlayerWon = ssgame.PlayerSelf
+	// already finished should supersede player turn check
+	game.PlayerTurn = ssgame.PlayerOpponent
 
 	res, alreadyFinished, err := xl.fireSalvo(game, ssgame.CoordsGroup{
 		mustCoordsFromString("0x0"),

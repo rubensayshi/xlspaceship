@@ -220,12 +220,6 @@ func (xl *XLSpaceship) ReceiveSalvoRequest(req *ReceiveSalvoRequest) (*SalvoResp
 		return nil, errors.Errorf("Coords invalid")
 	}
 
-	// check if it's the opponent's turn, otherwise he's not allowed to fire
-	// @TODO: alreadyFinished check should go before this
-	if game.PlayerTurn != ssgame.PlayerOpponent {
-		return nil, errors.Errorf("Not your turn")
-	}
-
 	// process the incoming salvo
 	res, alreadyFinished, err := xl.receiveSalvo(game, salvo)
 	if err != nil {
@@ -252,6 +246,11 @@ func (xl *XLSpaceship) receiveSalvo(game *ssgame.Game, salvo ssgame.CoordsGroup)
 		}
 
 		return res, true, nil
+	}
+
+	// check if it's the opponent's turn, otherwise he's not allowed to fire
+	if game.PlayerTurn != ssgame.PlayerOpponent {
+		return nil, false, errors.Errorf("Not your turn")
 	}
 
 	salvoRes := game.SelfBoard.ReceiveSalvo(salvo)
@@ -292,12 +291,6 @@ func (xl *XLSpaceship) FireSalvoRequest(req *FireSalvoRequest) (*SalvoResponse, 
 		return nil, errors.Errorf("Coords invalid")
 	}
 
-	// check if it's self's turn, otherwise he's not allowed to fire
-	// @TODO: alreadyFinished check should go before this
-	if game.PlayerTurn != ssgame.PlayerSelf {
-		return nil, errors.Errorf("Not your turn")
-	}
-
 	// fire off the salvo
 	res, alreadyFinished, err := xl.fireSalvo(game, salvo)
 	if err != nil {
@@ -324,6 +317,11 @@ func (xl *XLSpaceship) fireSalvo(game *ssgame.Game, salvo ssgame.CoordsGroup) (*
 		}
 
 		return res, true, nil
+	}
+
+	// check if it's self's turn, otherwise he's not allowed to fire
+	if game.PlayerTurn != ssgame.PlayerSelf {
+		return nil, false, errors.Errorf("Not your turn")
 	}
 
 	req := &ReceiveSalvoRequest{
