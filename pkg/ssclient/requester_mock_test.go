@@ -14,8 +14,8 @@ func (r *MockRequester) NewGame(dest SpaceshipProtocol, req *NewGameRequest) (*N
 	return args.Get(0).(*NewGameResponse), args.Error(1)
 }
 
-func (r *MockRequester) ReceiveSalvo(dest SpaceshipProtocol, gameID string, req *ReceiveSalvoRequest) (*SalvoResponse, error) {
-	args := r.Called(dest, gameID, *req)
+func (r *MockRequester) ReceiveSalvo(dest SpaceshipProtocol, req *ReceiveSalvoRequest) (*SalvoResponse, error) {
+	args := r.Called(dest, *req)
 
 	return args.Get(0).(*SalvoResponse), args.Error(1)
 }

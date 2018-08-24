@@ -41,7 +41,7 @@ func TestXLSpaceship_NewGame(t *testing.T) {
 		},
 	}
 
-	res, err := xl.NewGame(req)
+	res, err := xl.NewGameRequest(req)
 	assert.NoError(err)
 	assert.NotNil(res)
 
@@ -64,7 +64,7 @@ func TestXLSpaceship_ReceiveSalvo(t *testing.T) {
 		},
 	}
 
-	res, err := xl.NewGame(req)
+	res, err := xl.NewGameRequest(req)
 	assert.NoError(err)
 	assert.NotNil(res)
 
@@ -84,7 +84,7 @@ func TestXLSpaceship_ReceiveSalvo(t *testing.T) {
 	salvo, err := ssgame.CoordsGroupFromSalvoStrings([]string{"0x0", "1x0", "2x0"})
 	assert.NoError(err)
 
-	salvoRes, alreadyFinished, err := xl.ReceiveSalvo(game, salvo)
+	salvoRes, alreadyFinished, err := xl.receiveSalvo(game, salvo)
 	assert.NoError(err)
 	assert.Equal(false, alreadyFinished)
 
@@ -113,15 +113,11 @@ func TestXLSpaceship_ReceiveSalvoGameFinished(t *testing.T) {
 		},
 	}
 
-	res, err := xl.NewGame(req)
+	res, err := xl.NewGameRequest(req)
 	assert.NoError(err)
 	assert.NotNil(res)
 
 	game := xl.games[res.GameID]
-
-	// mark game done and make self winner
-	game.Status = ssgame.GameStatusDone
-	game.PlayerWon = ssgame.PlayerSelf
 
 	selfBoard, err := ssgame.NewBlankSelfBoard()
 	assert.NoError(err)
@@ -137,7 +133,11 @@ func TestXLSpaceship_ReceiveSalvoGameFinished(t *testing.T) {
 	salvo, err := ssgame.CoordsGroupFromSalvoStrings([]string{"0x0", "1x0", "2x0"})
 	assert.NoError(err)
 
-	salvoRes, alreadyFinish, err := xl.ReceiveSalvo(game, salvo)
+	// mark game done and make self winner
+	game.Status = ssgame.GameStatusDone
+	game.PlayerWon = ssgame.PlayerSelf
+
+	salvoRes, alreadyFinish, err := xl.receiveSalvo(game, salvo)
 	assert.NoError(err)
 	assert.Equal(true, alreadyFinish)
 
@@ -148,7 +148,7 @@ func TestXLSpaceship_ReceiveSalvoGameFinished(t *testing.T) {
 	}, salvoRes.Salvo)
 
 	assert.NotNil(salvoRes.GameWon)
-	assert.Equal("testplayer-2", salvoRes.GameWon.Won)
+	assert.Equal("testplayer-1", salvoRes.GameWon.Won)
 }
 
 func TestXLSpaceship_InitNewGame(t *testing.T) {
@@ -177,7 +177,7 @@ func TestXLSpaceship_InitNewGame(t *testing.T) {
 		},
 	}).Return(&NewGameResponse{}, nil)
 
-	res, err := xl.InitNewGame(req)
+	res, err := xl.InitNewGameRequest(req)
 	assert.NoError(err)
 	assert.NotNil(res)
 
@@ -198,7 +198,7 @@ func TestXLSpaceship_FireSalvo(t *testing.T) {
 		Port:     6666,
 	}
 
-	newGameRes, err := xl.NewGame(&NewGameRequest{
+	newGameRes, err := xl.NewGameRequest(&NewGameRequest{
 		UserID:            "testplayer-2",
 		SpaceshipProtocol: ssProtocol,
 	})
@@ -207,8 +207,9 @@ func TestXLSpaceship_FireSalvo(t *testing.T) {
 
 	game := xl.games[newGameRes.GameID]
 
-	mockRequester.On("ReceiveSalvo", ssProtocol, game.GameID, ReceiveSalvoRequest{
-		Salvo: []string{"0x0", "1x1"},
+	mockRequester.On("ReceiveSalvo", ssProtocol, ReceiveSalvoRequest{
+		GameID: "match-testplayer-1-1",
+		Salvo:  []string{"0x0", "1x1"},
 	}).Return(&SalvoResponse{
 		Salvo: map[string]string{
 			"0x0": "hit",
@@ -216,7 +217,7 @@ func TestXLSpaceship_FireSalvo(t *testing.T) {
 		},
 	}, nil)
 
-	res, alreadyFinished, err := xl.FireSalvo(game, ssgame.CoordsGroup{
+	res, alreadyFinished, err := xl.fireSalvo(game, ssgame.CoordsGroup{
 		mustCoordsFromString("0x0"),
 		mustCoordsFromString("1x1"),
 	})
@@ -224,7 +225,7 @@ func TestXLSpaceship_FireSalvo(t *testing.T) {
 	assert.Equal(false, alreadyFinished)
 	assert.NotNil(res)
 
-	status, ok := xl.GameStatus(game.GameID)
+	status, ok := xl.gameStatus(game.GameID)
 	assert.True(ok)
 	assert.NotNil(status)
 
@@ -266,7 +267,7 @@ func TestXLSpaceship_FireSalvoWin(t *testing.T) {
 		Port:     6666,
 	}
 
-	newGameRes, err := xl.NewGame(&NewGameRequest{
+	newGameRes, err := xl.NewGameRequest(&NewGameRequest{
 		UserID:            "testplayer-2",
 		SpaceshipProtocol: ssProtocol,
 	})
@@ -275,8 +276,9 @@ func TestXLSpaceship_FireSalvoWin(t *testing.T) {
 
 	game := xl.games[newGameRes.GameID]
 
-	mockRequester.On("ReceiveSalvo", ssProtocol, game.GameID, ReceiveSalvoRequest{
-		Salvo: []string{"0x0", "1x1"},
+	mockRequester.On("ReceiveSalvo", ssProtocol, ReceiveSalvoRequest{
+		GameID: "match-testplayer-1-1",
+		Salvo:  []string{"0x0", "1x1"},
 	}).Return(&SalvoResponse{
 		Salvo: map[string]string{
 			"0x0": "hit",
@@ -287,7 +289,7 @@ func TestXLSpaceship_FireSalvoWin(t *testing.T) {
 		},
 	}, nil)
 
-	res, alreadyFinished, err := xl.FireSalvo(game, ssgame.CoordsGroup{
+	res, alreadyFinished, err := xl.fireSalvo(game, ssgame.CoordsGroup{
 		mustCoordsFromString("0x0"),
 		mustCoordsFromString("1x1"),
 	})
@@ -295,7 +297,7 @@ func TestXLSpaceship_FireSalvoWin(t *testing.T) {
 	assert.Equal(false, alreadyFinished)
 	assert.NotNil(res)
 
-	status, ok := xl.GameStatus(game.GameID)
+	status, ok := xl.gameStatus(game.GameID)
 	assert.True(ok)
 	assert.NotNil(status)
 
@@ -337,7 +339,7 @@ func TestXLSpaceship_FireSalvoAlreadyFinished(t *testing.T) {
 		Port:     6666,
 	}
 
-	newGameRes, err := xl.NewGame(&NewGameRequest{
+	newGameRes, err := xl.NewGameRequest(&NewGameRequest{
 		UserID:            "testplayer-2",
 		SpaceshipProtocol: ssProtocol,
 	})
@@ -350,7 +352,7 @@ func TestXLSpaceship_FireSalvoAlreadyFinished(t *testing.T) {
 	game.Status = ssgame.GameStatusDone
 	game.PlayerWon = ssgame.PlayerSelf
 
-	res, alreadyFinished, err := xl.FireSalvo(game, ssgame.CoordsGroup{
+	res, alreadyFinished, err := xl.fireSalvo(game, ssgame.CoordsGroup{
 		mustCoordsFromString("0x0"),
 		mustCoordsFromString("1x1"),
 	})

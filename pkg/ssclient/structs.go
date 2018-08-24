@@ -1,10 +1,16 @@
 package ssclient
 
-import "github.com/rubensayshi/xlspaceship/pkg/ssgame"
+import (
+	"github.com/pkg/errors"
+	"github.com/rubensayshi/xlspaceship/pkg/ssgame"
+)
 
 type SpaceshipProtocol struct {
 	Hostname string `json:"hostname"`
 	Port     int    `json:"port"`
+}
+
+type WhoAmIRequest struct {
 }
 
 type WhoAmIResponse struct {
@@ -44,6 +50,10 @@ func NewGameResponseFromGame(s *XLSpaceship, game *ssgame.Game) *NewGameResponse
 
 type InitGameRequest struct {
 	SpaceshipProtocol SpaceshipProtocol `json:"spaceship_protocol"`
+}
+
+type GameStatusRequest struct {
+	GameID string `json:"game_id"`
 }
 
 type GamePlayerTurnResponse struct {
@@ -104,19 +114,26 @@ func GameStatusResponseFromGame(s *XLSpaceship, game *ssgame.Game) *GameStatusRe
 	return res
 }
 
+type FireSalvoRequest struct {
+	GameID string   `json:"-"`
+	Salvo  []string `json:"salvo"`
+}
+
 type ReceiveSalvoRequest struct {
-	Salvo []string `json:"salvo"`
+	GameID string   `json:"-"`
+	Salvo  []string `json:"salvo"`
 }
 
 // @TODO: should make custom JSON marshall/unmarshall for the "game" field instead of the hacky way we do now
 type SalvoResponse struct {
-	Salvo          map[string]string       `json:"salvo"`
-	Game           map[string]string       `json:"game"`
-	GameWon        *GameWonResponse        `json:"-"`
-	GamePlayerTurn *GamePlayerTurnResponse `json:"-"`
+	Salvo           map[string]string       `json:"salvo"`
+	Game            map[string]string       `json:"game"`
+	GameWon         *GameWonResponse        `json:"-"`
+	GamePlayerTurn  *GamePlayerTurnResponse `json:"-"`
+	AlreadyFinished bool                    `json:"-"`
 }
 
-func ReceiveSalvoResponseFromSalvoResult(salvoResult []*ssgame.ShotResult, s *XLSpaceship, game *ssgame.Game) *SalvoResponse {
+func SalvoResponseFromSalvoResult(salvoResult []*ssgame.ShotResult, xl *XLSpaceship, game *ssgame.Game) *SalvoResponse {
 	res := &SalvoResponse{
 		Salvo: make(map[string]string, len(salvoResult)),
 	}
@@ -126,17 +143,35 @@ func ReceiveSalvoResponseFromSalvoResult(salvoResult []*ssgame.ShotResult, s *XL
 	}
 
 	if game.Status == ssgame.GameStatusDone {
-		res.GameWon = &GameWonResponse{Won: game.Opponent.PlayerID}
-		res.Game = map[string]string{"won": game.Opponent.PlayerID}
+		res.GameWon = &GameWonResponse{Won: xl.Player.PlayerID}
+		if game.PlayerWon != ssgame.PlayerSelf {
+			res.GameWon.Won = game.Opponent.PlayerID
+		}
+		res.Game = map[string]string{"won": res.GameWon.Won}
 	} else {
-		playerTurn := s.Player.PlayerID
+		res.GamePlayerTurn = &GamePlayerTurnResponse{PlayerTurn: xl.Player.PlayerID}
 		if game.PlayerTurn != ssgame.PlayerSelf {
-			playerTurn = game.Opponent.PlayerID
+			res.GamePlayerTurn.PlayerTurn = game.Opponent.PlayerID
 		}
 
-		res.GamePlayerTurn = &GamePlayerTurnResponse{PlayerTurn: playerTurn}
-		res.Game = map[string]string{"player_turn": playerTurn}
+		res.Game = map[string]string{"player_turn": res.GamePlayerTurn.PlayerTurn}
 	}
 
 	return res
+}
+
+func (r *SalvoResponse) Normalize() error {
+	if playerIdWon, won := r.Game["won"]; won {
+		r.GameWon = &GameWonResponse{
+			Won: playerIdWon,
+		}
+	} else if playerIdTurn, turn := r.Game["player_turn"]; turn {
+		r.GamePlayerTurn = &GamePlayerTurnResponse{
+			PlayerTurn: playerIdTurn,
+		}
+	} else {
+		return errors.Errorf("SalvoResponse should either contain 'won' or 'player_turn'")
+	}
+
+	return nil
 }

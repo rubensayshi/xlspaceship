@@ -64,7 +64,7 @@ type Game struct {
 }
 
 // create a new game with a random board for self and a blank board for opponent
-func CreateNewGame(opponent *Player) (*Game, error) {
+func CreateNewGame(gameID string, opponent *Player, cheatToBeFirst bool) (*Game, error) {
 	// give ourselves a random board
 	selfBoard, err := NewRandomSelfBoard(SpaceshipsSetForBaseGame)
 	if err != nil {
@@ -78,10 +78,13 @@ func CreateNewGame(opponent *Player) (*Game, error) {
 	}
 
 	// determine which player get's to go first
-	firstPlayer := RandomFirstPlayer()
+	firstPlayer := PlayerSelf
+	if !cheatToBeFirst {
+		firstPlayer = RandomFirstPlayer()
+	}
 
 	game := &Game{
-		GameID:        RandomGameID(),
+		GameID:        gameID,
 		Opponent:      opponent,
 		Status:        GameStatusOnGoing,
 		SelfBoard:     selfBoard,

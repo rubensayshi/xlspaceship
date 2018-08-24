@@ -11,7 +11,7 @@ import (
 
 type Requester interface {
 	NewGame(dest SpaceshipProtocol, req *NewGameRequest) (*NewGameResponse, error)
-	ReceiveSalvo(dest SpaceshipProtocol, gameID string, req *ReceiveSalvoRequest) (*SalvoResponse, error)
+	ReceiveSalvo(dest SpaceshipProtocol, req *ReceiveSalvoRequest) (*SalvoResponse, error)
 }
 
 type HttpRequester struct {
@@ -41,13 +41,13 @@ func (r *HttpRequester) NewGame(dest SpaceshipProtocol, req *NewGameRequest) (*N
 	return newGameRes, nil
 }
 
-func (r *HttpRequester) ReceiveSalvo(dest SpaceshipProtocol, gameID string, req *ReceiveSalvoRequest) (*SalvoResponse, error) {
+func (r *HttpRequester) ReceiveSalvo(dest SpaceshipProtocol, req *ReceiveSalvoRequest) (*SalvoResponse, error) {
 	reqJson, err := json.Marshal(req)
 	if err != nil {
 		return nil, errors.Wrapf(err, "Failed to request receive salvo")
 	}
 
-	res, err := Put(fmt.Sprintf("http://%s:%d/xl-spaceship/protocol/game/%s", dest.Hostname, dest.Port, gameID), "application/json", bytes.NewBuffer(reqJson))
+	res, err := Put(fmt.Sprintf("http://%s:%d/xl-spaceship/protocol/game/%s", dest.Hostname, dest.Port, req.GameID), "application/json", bytes.NewBuffer(reqJson))
 	if err != nil {
 		return nil, errors.Wrapf(err, "Failed to request receive salvo")
 	}
@@ -62,16 +62,9 @@ func (r *HttpRequester) ReceiveSalvo(dest SpaceshipProtocol, gameID string, req 
 		return nil, errors.Wrapf(err, "Failed to request receive salvo")
 	}
 
-	if playerIdWon, won := salvoResponse.Game["won"]; won {
-		salvoResponse.GameWon = &GameWonResponse{
-			Won: playerIdWon,
-		}
-	} else if playerIdTurn, turn := salvoResponse.Game["player_turn"]; turn {
-		salvoResponse.GamePlayerTurn = &GamePlayerTurnResponse{
-			PlayerTurn: playerIdTurn,
-		}
-	} else {
-		return nil, errors.Errorf("SalvoResponse should either contain 'won' or 'player_turn'")
+	err = salvoResponse.Normalize()
+	if err != nil {
+		return nil, errors.Wrapf(err, "Failed to request receive salvo")
 	}
 
 	return salvoResponse, nil

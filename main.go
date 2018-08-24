@@ -88,6 +88,10 @@ func main() {
 	// create wg that will control when we exit
 	wg := &sync.WaitGroup{}
 
+	go func() {
+		s.Run()
+	}()
+
 	// serve the rest API
 	ssclient.Serve(s, *fPort, wg)
 
