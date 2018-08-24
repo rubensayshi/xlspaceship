@@ -80,9 +80,13 @@ angular.module('xlspaceship')
         }
 
         // setup interval to fetch fresh data
-        // @TODO: clear interval on $scope.$destroy
-        $interval(function() {
+        let refreshInterval = $interval(function() {
             refresh();
         }, 500);
+
+        // clear interval when $scope is destroyed to avoid zombie polling
+        $scope.$on("$destroy", function() {
+            $interval.cancel(refreshInterval);
+        })
     });
 

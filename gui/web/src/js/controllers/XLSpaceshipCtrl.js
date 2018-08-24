@@ -79,9 +79,9 @@ angular.module('xlspaceship')
         // fetch self data straight away
         whoami();
 
+
         // setup interval to fetch fresh data
-        // @TODO: clear interval on $scope.$destroy
-        $interval(function() {
+        let refreshInterval = $interval(function() {
             whoami();
 
             angular.forEach($scope.games, function(game, gameID) {
@@ -92,4 +92,9 @@ angular.module('xlspaceship')
                 }
             });
         }, 500);
+
+        // clear interval when $scope is destroyed to avoid zombie polling
+        $scope.$on("$destroy", function() {
+            $interval.cancel(refreshInterval);
+        })
     });
