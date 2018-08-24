@@ -72,7 +72,7 @@ func AddWhoAmIGameHandler(xl *XLSpaceship, r *mux.Router) {
 
 func AddNewGameHandler(xl *XLSpaceship, r *mux.Router) {
 	r.HandleFunc("/xl-spaceship/protocol/game/new", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("%xl: %xl \n", r.Method, r.RequestURI)
+		fmt.Printf("%s: %s \n", r.Method, r.RequestURI)
 
 		req := &NewGameRequest{}
 		err := json.NewDecoder(r.Body).Decode(&req)
@@ -110,7 +110,7 @@ func AddNewGameHandler(xl *XLSpaceship, r *mux.Router) {
 
 func AddInitGameHandler(xl *XLSpaceship, r *mux.Router) {
 	r.HandleFunc("/xl-spaceship/user/game/new", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("%xl \n", r.RequestURI)
+		fmt.Printf("%s: %s \n", r.Method, r.RequestURI)
 
 		req := &InitGameRequest{}
 		err := json.NewDecoder(r.Body).Decode(&req)
@@ -143,7 +143,7 @@ func AddInitGameHandler(xl *XLSpaceship, r *mux.Router) {
 
 func AddGameStatusHandler(xl *XLSpaceship, r *mux.Router) {
 	r.HandleFunc("/xl-spaceship/user/game/{gameID}", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("%xl \n", r.RequestURI)
+		fmt.Printf("%s: %s \n", r.Method, r.RequestURI)
 
 		vars := mux.Vars(r)
 		gameID := vars["gameID"]
@@ -183,7 +183,7 @@ func AddGameStatusHandler(xl *XLSpaceship, r *mux.Router) {
 
 func AddFireSalvoHandler(xl *XLSpaceship, r *mux.Router) {
 	r.HandleFunc("/xl-spaceship/user/game/{gameID}/fire", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("%xl \n", r.RequestURI)
+		fmt.Printf("%s: %s \n", r.Method, r.RequestURI)
 
 		vars := mux.Vars(r)
 		gameID := vars["gameID"]
@@ -230,7 +230,7 @@ func AddFireSalvoHandler(xl *XLSpaceship, r *mux.Router) {
 
 func AddReceiveSalvoHandler(xl *XLSpaceship, r *mux.Router) {
 	r.HandleFunc("/xl-spaceship/protocol/game/{gameID}", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("%xl \n", r.RequestURI)
+		fmt.Printf("%s: %s \n", r.Method, r.RequestURI)
 
 		vars := mux.Vars(r)
 		gameID := vars["gameID"]

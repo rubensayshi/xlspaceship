@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"io/ioutil"
+
 	"github.com/pkg/errors"
 )
 
@@ -28,7 +30,8 @@ func (r *HttpRequester) NewGame(dest SpaceshipProtocol, req *NewGameRequest) (*N
 		return nil, errors.Wrapf(err, "Failed to request new game")
 	}
 	if res.StatusCode != http.StatusCreated {
-		return nil, errors.Errorf("Failed to request new game (http: %d)", res.StatusCode)
+		body, _ := ioutil.ReadAll(res.Body)
+		return nil, errors.Errorf("Failed to request new game (http: %d): %s", res.StatusCode, body)
 	}
 	defer res.Body.Close()
 

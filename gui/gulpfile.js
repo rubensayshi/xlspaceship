@@ -12,7 +12,7 @@ let isLiveReload = process.argv.indexOf('--live-reload') !== -1 || process.argv.
 
 gulp.task('templates:index', ['js', 'sass'], function() {
 
-    return gulp.src("./web/src/play.html")
+    return gulp.src("./web/src/game.html")
         .pipe(template({}))
         .pipe(gulp.dest("./web/www"));
 });
@@ -74,7 +74,7 @@ gulp.task('watch', function() {
     gulp.watch(['./web/src/sass/**/*.scss'], ['sass:livereload']);
     gulp.watch(['./web/src/img/**/*', './web/src/font/**/*'], ['copystatics:livereload']);
     gulp.watch(['./web/src/js/**/*.js'], ['js:app:livereload']);
-    gulp.watch(['./web/src/templates/**/*', './web/src/play.html'], ['templates:livereload']);
+    gulp.watch(['./web/src/templates/**/*', './web/src/game.html'], ['templates:livereload']);
 });
 
 gulp.task('js:app:livereload', ['js:app'], function() {

@@ -98,13 +98,13 @@ func main() {
 	// open or print the gui URL
 	guiUrl := fmt.Sprintf("http://localhost:%d/gui/game.html", *fPort)
 	if !*fDontOpenGui {
-		fmt.Printf("Opening GUI in browser (if it does not open visit: %s", guiUrl)
+		fmt.Printf("Opening GUI in browser (if it does not open visit: %s\n", guiUrl)
 		go func() {
 			<-time.After(time.Millisecond * 100)
 			browser.OpenURL(guiUrl)
 		}()
 	} else {
-		fmt.Printf("You can open the GUI in the browser by visiting: %s", guiUrl)
+		fmt.Printf("You can open the GUI in the browser by visiting: %s\n", guiUrl)
 	}
 
 	// if waitgroup finishes then we quit

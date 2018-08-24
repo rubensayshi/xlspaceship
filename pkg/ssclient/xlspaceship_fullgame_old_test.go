@@ -9,6 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Old test for "full game" between 2 instances of XlSpaceship,
+//  the new way as in TestXLSpaceshipFullGameNew is much easier to write/read
 func TestXLSpaceshipFullGameOld(t *testing.T) {
 	assert := require.New(t)
 
