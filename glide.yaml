@@ -11,3 +11,6 @@ import:
 - package: github.com/rakyll/statik
   version: ^0.1.4
 - package: github.com/pkg/browser
+- package: golang.org/x/tools
+  subpackages:
+  - cover

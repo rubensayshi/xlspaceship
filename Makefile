@@ -15,8 +15,8 @@ coverage:
 build-gui:
 	cd ./gui && bower update && gulp
 
-watch-build-gui:
-	cd ./gui && bower update && gulp watch --live-reload
+watch-build-gui: build-gui
+	cd ./gui && gulp watch --live-reload
 
 build-gui-statik:
 	rm ./statik/statik.go || echo ""
