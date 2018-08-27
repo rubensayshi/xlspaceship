@@ -36,6 +36,8 @@ func TestSpaceshipFromPatternValidAngle(t *testing.T) {
 	spaceship, err := SpaceshipFromPattern(SpaceshipPatternAngle)
 	assert.NoError(err)
 	assert.NotNil(spaceship)
+
+	assert.Equal("[0x0 0x1 0x2 0x3 1x3 2x3]", fmt.Sprintf("%s", spaceship.coords))
 }
 
 func TestSpaceshipFromPatternValidAClass(t *testing.T) {
@@ -44,6 +46,8 @@ func TestSpaceshipFromPatternValidAClass(t *testing.T) {
 	spaceship, err := SpaceshipFromPattern(SpaceshipPatternAClass)
 	assert.NoError(err)
 	assert.NotNil(spaceship)
+
+	assert.Equal("[1x0 0x1 2x1 0x2 1x2 2x2 0x3 2x3]", fmt.Sprintf("%s", spaceship.coords))
 }
 
 func TestSpaceshipFromPatternValidBClass(t *testing.T) {
@@ -52,6 +56,8 @@ func TestSpaceshipFromPatternValidBClass(t *testing.T) {
 	spaceship, err := SpaceshipFromPattern(SpaceshipPatternBClass)
 	assert.NoError(err)
 	assert.NotNil(spaceship)
+
+	assert.Equal("[0x0 1x0 0x1 2x1 0x2 1x2 0x3 2x3 0x4 1x4]", fmt.Sprintf("%s", spaceship.coords))
 }
 
 func TestSpaceshipFromPatternValidSClass(t *testing.T) {
@@ -60,6 +66,8 @@ func TestSpaceshipFromPatternValidSClass(t *testing.T) {
 	spaceship, err := SpaceshipFromPattern(SpaceshipPatternSClass)
 	assert.NoError(err)
 	assert.NotNil(spaceship)
+
+	assert.Equal("[1x0 2x0 0x1 1x2 2x2 3x3 1x4 2x4]", fmt.Sprintf("%s", spaceship.coords))
 }
 
 func TestSpaceshipFromPatternInvalidBlank(t *testing.T) {
