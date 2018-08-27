@@ -30,10 +30,9 @@ func BlankBoardPattern() []string {
 	}
 }
 
-// the base type for our baords to share
+// the base type for our boards to share
 type BaseBoard struct {
-	hits   CoordsGroup
-	misses CoordsGroup
+	grid [][]*GridCell
 }
 
 // our own board which contains our own placed shaceships
@@ -92,10 +91,7 @@ func newRandomSelfBoard(spaceships [][]string) (*SelfBoard, error) {
 }
 
 func newBaseBoard() *BaseBoard {
-	return &BaseBoard{
-		hits:   make(CoordsGroup, 0),
-		misses: make(CoordsGroup, 0),
-	}
+	return &BaseBoard{}
 }
 
 func NewSelfBoard() *SelfBoard {
@@ -155,20 +151,19 @@ func FillBoardFromPattern(board *BaseBoard, pattern []string) error {
 		}
 	}
 
-	// parse the input
+	// init the grid with rows
+	board.grid = make([][]*GridCell, ROWS)
+
+	// parse the input and add them to the grid
 	for y, row := range pattern {
+		board.grid[y] = make([]*GridCell, COLS)
+
 		for x, char := range []byte(row) {
 			coordsState := CoordsState(char)
 
-			switch coordsState {
-			case CoordsBlank:
-				// - nothing to do
-			case CoordsShip:
-				// @TODO: not implemented, the dream is to store them and try and match the patterns to our known spaceships
-			case CoordsHit:
-				board.hits = append(board.hits, &Coords{x: int8(x), y: int8(y)})
-			case CoordsMiss:
-				board.misses = append(board.misses, &Coords{x: int8(x), y: int8(y)})
+			board.grid[y][x] = &GridCell{
+				coords: &Coords{x: int8(x), y: int8(y)},
+				state:  coordsState,
 			}
 		}
 	}
@@ -176,30 +171,17 @@ func FillBoardFromPattern(board *BaseBoard, pattern []string) error {
 	return nil
 }
 
-func (b *BaseBoard) buildBasePattern() [][]byte {
-	// @TODO: considering the board size is constant we could just have a const string to copy for this instead of building the blank state everytime
+func (b *BaseBoard) buildPattern() [][]byte {
 	pattern := make([][]byte, ROWS)
-	for y, _ := range pattern {
+	for y, row := range b.grid {
 		pattern[y] = make([]byte, COLS)
 
-		for x := 0; x < COLS; x++ {
-			pattern[y][x] = byte(CoordsBlank)
+		for x, cell := range row {
+			pattern[y][x] = byte(cell.state)
 		}
 	}
 
 	return pattern
-}
-
-func (b *BaseBoard) applyHitsAndMissesToPattern(pattern [][]byte) {
-	// add hits to the pattern (will overwrite spaceship coords)
-	for _, hit := range b.hits {
-		pattern[hit.y][hit.x] = byte(CoordsHit)
-	}
-
-	// add misses to the pattern
-	for _, miss := range b.misses {
-		pattern[miss.y][miss.x] = byte(CoordsMiss)
-	}
 }
 
 func (b *BaseBoard) patternToStrings(pattern [][]byte) []string {
@@ -213,27 +195,39 @@ func (b *BaseBoard) patternToStrings(pattern [][]byte) []string {
 }
 
 func (b *BaseBoard) ToPattern() []string {
-	pattern := b.buildBasePattern()
-	b.applyHitsAndMissesToPattern(pattern)
+	pattern := b.buildPattern()
 
 	return b.patternToStrings(pattern)
 }
 
-func (b *SelfBoard) applyShipsToPattern(pattern [][]byte) {
-	// add spaceships to the pattern
-	for _, spaceship := range b.spaceships {
-		for _, coords := range spaceship.coords {
-			pattern[coords.y][coords.x] = byte(CoordsShip)
+// Count the hits, could be stored internally instead of recounting every time, but we don't actually use this outside of tests currently
+func (b *BaseBoard) CountHits() int {
+	hits := 0
+
+	for _, row := range b.grid {
+		for _, cell := range row {
+			if cell.state == CoordsHit {
+				hits++
+			}
 		}
 	}
+
+	return hits
 }
 
-func (b *SelfBoard) ToPattern() []string {
-	pattern := b.buildBasePattern()
-	b.applyShipsToPattern(pattern)
-	b.applyHitsAndMissesToPattern(pattern)
+// Count the misses, could be stored internally instead of recounting every time, but we don't actually use this outside of tests currently
+func (b *BaseBoard) CountMisses() int {
+	misses := 0
 
-	return b.patternToStrings(pattern)
+	for _, row := range b.grid {
+		for _, cell := range row {
+			if cell.state == CoordsMiss {
+				misses++
+			}
+		}
+	}
+
+	return misses
 }
 
 // attempt to add a spaceship on random locations until we succeed
@@ -283,6 +277,14 @@ func (b *SelfBoard) AddSpaceshipOnCoords(spaceship *Spaceship) error {
 	// add spaceship to board
 	b.spaceships = append(b.spaceships, spaceship)
 
+	// add spaceship to grid
+	for _, coords := range spaceship.coords {
+		if b.grid[coords.y][coords.x].state != CoordsHit {
+			b.grid[coords.y][coords.x].state = CoordsShip
+		}
+		b.grid[coords.y][coords.x].spaceship = spaceship
+	}
+
 	return nil
 }
 
@@ -298,34 +300,35 @@ func (b *SelfBoard) ReceiveSalvo(salvo CoordsGroup) []*ShotResult {
 
 // apply a shot to our board
 func (b *SelfBoard) ApplyShot(shot *Coords) *ShotResult {
-	// @TODO: same as with AddSpacehipOnCoords it would be a good optimization to store the coords of the ships so we don't have to loop over them
 	status := ShotStatusMiss
 
-	for _, spaceship := range b.spaceships {
-		// check if it's FRESH hit
-		if spaceship.coords.Contains(shot) && !spaceship.hits.Contains(shot) {
-			status = ShotStatusHit
+	// check if shot is within bounds of our grid
+	if int(shot.y) < len(b.grid) && int(shot.x) < len(b.grid[shot.y]) {
+		cell := b.grid[shot.y][shot.x]
 
-			// add the coords as a hit
-			spaceship.hits = append(spaceship.hits, shot)
-			b.hits = append(b.hits, shot)
+		// check if shot was on a ship (note; previous hits will fail because they're already CoordsHit), this is intended
+		if cell.state == CoordsShip {
+			cell.state = CoordsHit
 
-			fmt.Printf("")
+			if cell.spaceship.coords.Contains(shot) && !cell.spaceship.hits.Contains(shot) {
+				status = ShotStatusHit
 
-			// if we've hit all the coords then it's a kill
-			if len(spaceship.hits) == len(spaceship.coords) {
-				spaceship.dead = true
-				status = ShotStatusKill
+				// add the coords as a hit
+				cell.spaceship.hits = append(cell.spaceship.hits, shot)
+
+				fmt.Printf("")
+
+				// if we've hit all the coords then it's a kill
+				if len(cell.spaceship.hits) == len(cell.spaceship.coords) {
+					cell.spaceship.dead = true
+					status = ShotStatusKill
+				}
 			}
-
-			// break, can't have more than 1 hit
-			break
+		} else if cell.state == CoordsHit {
+			// nothing to do, already a hit so leave untouched and return MISS
+		} else {
+			cell.state = CoordsMiss
 		}
-	}
-
-	// store the miss, but only if it wasn't already stored as hit or miss
-	if status == ShotStatusMiss && !b.hits.Contains(shot) && !b.misses.Contains(shot) {
-		b.misses = append(b.misses, shot)
 	}
 
 	res := &ShotResult{
@@ -338,14 +341,18 @@ func (b *SelfBoard) ApplyShot(shot *Coords) *ShotResult {
 
 // apply one of our shots to opponent's board using the status our opponent told us of the shot
 func (b *OpponentBoard) ApplyShotStatus(shot *Coords, status ShotStatus) {
-	switch status {
-	case ShotStatusMiss:
-		b.misses = append(b.misses, shot)
-	case ShotStatusHit:
-		b.hits = append(b.hits, shot)
-	case ShotStatusKill:
-		b.hits = append(b.hits, shot)
-		b.spaceshipsAlive--
+
+	// check if shot is within bounds of our grid
+	if int(shot.y) < len(b.grid) && int(shot.x) < len(b.grid[shot.y]) {
+		switch status {
+		case ShotStatusMiss:
+			b.grid[shot.y][shot.x].state = CoordsMiss
+		case ShotStatusHit:
+			b.grid[shot.y][shot.x].state = CoordsHit
+		case ShotStatusKill:
+			b.grid[shot.y][shot.x].state = CoordsHit
+			b.spaceshipsAlive--
+		}
 	}
 }
 
@@ -376,10 +383,6 @@ func (b *OpponentBoard) AllShipsDead() bool {
 	return b.spaceshipsAlive == 0
 }
 
-func (b *OpponentBoard) String() string {
-	return fmt.Sprintf("%s", strings.Join(b.ToPattern(), "\n"))
-}
-
-func (b *SelfBoard) String() string {
+func (b *BaseBoard) String() string {
 	return fmt.Sprintf("%s", strings.Join(b.ToPattern(), "\n"))
 }

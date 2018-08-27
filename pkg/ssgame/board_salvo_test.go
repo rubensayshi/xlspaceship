@@ -49,14 +49,14 @@ func TestBoard_ApplyShotHitTwice(t *testing.T) {
 	res := board.ApplyShot(&Coords{0, 0})
 	assert.NotNil(res)
 	assert.Equal(ShotStatusHit, res.ShotStatus)
-	assert.Equal(1, len(board.hits))
-	assert.Equal(0, len(board.misses))
+	assert.Equal(1, board.CountHits())
+	assert.Equal(0, board.CountMisses())
 
 	res = board.ApplyShot(&Coords{0, 0})
 	assert.NotNil(res)
 	assert.Equal(ShotStatusMiss, res.ShotStatus)
-	assert.Equal(1, len(board.hits))
-	assert.Equal(0, len(board.misses))
+	assert.Equal(1, board.CountHits())
+	assert.Equal(0, board.CountMisses())
 }
 
 func TestBoard_ApplyShotKill(t *testing.T) {
@@ -201,4 +201,42 @@ func TestBoard_ApplyShotStatusKill(t *testing.T) {
 	assert.Equal(uint8(0), board.spaceshipsAlive)
 	assert.Equal(0, board.CountShipsAlive())
 	assert.Equal(true, board.AllShipsDead())
+}
+
+func TestBoard_ApplyShotOutOfBounds(t *testing.T) {
+	assert := require.New(t)
+
+	board := NewBasicTestBoardWithSpaceship(assert)
+
+	res := board.ApplyShot(&Coords{20, 20})
+	assert.NotNil(res)
+	assert.Equal(ShotStatusMiss, res.ShotStatus)
+}
+
+func TestBoard_ApplyShotStatusOutOfBounds(t *testing.T) {
+	assert := require.New(t)
+
+	board, err := NewBlankOpponentBoard(1)
+	assert.NoError(err)
+
+	board.ApplyShotStatus(&Coords{20, 20}, ShotStatusKill)
+
+	assert.Equal([]string{
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+		"................",
+	}, board.ToPattern())
 }

@@ -88,6 +88,12 @@ const (
 	ShotStatusKillStr string = "kill"
 )
 
+type GridCell struct {
+	coords    *Coords
+	state     CoordsState
+	spaceship *Spaceship
+}
+
 type Coords struct {
 	x int8
 	y int8

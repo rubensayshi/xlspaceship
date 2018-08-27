@@ -12,8 +12,8 @@ func TestBoardFromPatternEmpty(t *testing.T) {
 	board, err := NewBlankSelfBoard()
 	assert.NoError(err)
 	assert.NotNil(board)
-	assert.Equal(0, len(board.hits))
-	assert.Equal(0, len(board.misses))
+	assert.Equal(0, board.CountHits())
+	assert.Equal(0, board.CountMisses())
 	assert.Equal(0, len(board.spaceships))
 }
 
@@ -172,8 +172,8 @@ func TestBoardFromPatternHits(t *testing.T) {
 	})
 	assert.NoError(err)
 	assert.NotNil(board)
-	assert.Equal(16, len(board.hits))
-	assert.Equal(0, len(board.misses))
+	assert.Equal(16, board.CountHits())
+	assert.Equal(0, board.CountMisses())
 }
 
 func TestBoardFromPatternMisses(t *testing.T) {
@@ -200,8 +200,8 @@ func TestBoardFromPatternMisses(t *testing.T) {
 	})
 	assert.NoError(err)
 	assert.NotNil(board)
-	assert.Equal(0, len(board.hits))
-	assert.Equal(16, len(board.misses))
+	assert.Equal(0, board.CountHits())
+	assert.Equal(16, board.CountMisses())
 }
 
 func TestBoardFromPatternMixed(t *testing.T) {
@@ -228,6 +228,6 @@ func TestBoardFromPatternMixed(t *testing.T) {
 	})
 	assert.NoError(err)
 	assert.NotNil(board)
-	assert.Equal(8, len(board.hits))
-	assert.Equal(8, len(board.misses))
+	assert.Equal(8, board.CountHits())
+	assert.Equal(8, board.CountMisses())
 }

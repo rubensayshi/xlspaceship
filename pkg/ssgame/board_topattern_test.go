@@ -34,8 +34,8 @@ func TestBoard_ToPatternBoard(t *testing.T) {
 	err := FillBoardFromPattern(board.BaseBoard, pattern)
 	assert.NoError(err)
 	assert.NotNil(board)
-	assert.Equal(8, len(board.hits))
-	assert.Equal(8, len(board.misses))
+	assert.Equal(8, board.CountHits())
+	assert.Equal(8, board.CountMisses())
 
 	assert.Equal(pattern, board.ToPattern())
 
@@ -67,8 +67,8 @@ func TestBoardToPatternWithShipsNoMarks(t *testing.T) {
 	board, err := NewBlankSelfBoard()
 	assert.NoError(err)
 	assert.NotNil(board)
-	assert.Equal(0, len(board.hits))
-	assert.Equal(0, len(board.misses))
+	assert.Equal(0, board.CountHits())
+	assert.Equal(0, board.CountMisses())
 	assert.Equal(0, len(board.spaceships))
 
 	assert.Equal(BlankBoardPattern(), board.ToPattern())

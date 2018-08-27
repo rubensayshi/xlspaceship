@@ -38,8 +38,8 @@ The `pkg/ssgame` part contains all the code for 1 single game.
 Currently it contains some code to use deterministic random values because that makes debugging and testing a lot easier,
 for a real game it would ofcourse be important that the random numbers are secure, for which we'd need to switch to use the `crypto/rand` package.
 
-Looking over it now I think it would have been better to simply implement a grid with coords and "place" the ships, hits and misses on them instead of tracking them seperately,
-I haven't gotten around to doing that but with the test coverage in place it shouldn't be too hard to refactor that without breaking anything.
+Initially we were storing, spaceships, hits and misses each seperately so we wouldn't have to store data for empty and untouched cells,
+however looking back at the code that was resulting in a bunch of inefficient for loops so after all test coverage was in place I refactored it to store each cell in a grid instead.
 
 
 #### `pkg/ssclient`
