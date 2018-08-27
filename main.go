@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/manifoldco/promptui"
 	"github.com/pkg/browser"
 	"github.com/rubensayshi/xlspaceship/pkg/ssclient"
 )
@@ -69,14 +70,48 @@ func maybeGetEnv(env string, dflt string) string {
 
 // define flags for CLI, most with env var fallback
 var fPort = flag.Int("port", maybeGetEnvInt("PORT", 8080), "port to serve the REST API on")
-var fPlayerID = flag.String("playerID", maybeGetEnv("PLAYERID", "player-1"), "your player ID")
-var fPlayerName = flag.String("playerName", maybeGetEnv("PLAYERNAME", "Player 1"), "your player name")
+var fPlayerID = flag.String("playerID", maybeGetEnv("PLAYERID", ""), "your player ID")
+var fPlayerName = flag.String("playerName", maybeGetEnv("PLAYERNAME", ""), "your player name")
 var fCheat = flag.Bool("cheat", maybeGetEnvBool("CHEAT", false), "enable cheat mode")
 var fDontOpenGui = flag.Bool("dontopengui", maybeGetEnvBool("DONTOPENGUI", false), "don't pop open the GUI when the process starts")
+
+func maybePromptPlayerID() {
+	for *fPlayerID == "" {
+		prompt := promptui.Prompt{
+			Label: "Player ID",
+		}
+
+		result, err := prompt.Run()
+		if err != nil {
+			panic(err)
+		}
+
+		*fPlayerID = result
+	}
+}
+
+func maybePromptPlayerName() {
+	for *fPlayerName == "" {
+		prompt := promptui.Prompt{
+			Label: "Player Name",
+		}
+
+		result, err := prompt.Run()
+		if err != nil {
+			panic(err)
+		}
+
+		*fPlayerName = result
+	}
+}
 
 func main() {
 	fmt.Printf("XLSpaceship starting ... \n")
 	flag.Parse()
+
+	// prompt for player ID and name if they're not provided already
+	maybePromptPlayerID()
+	maybePromptPlayerName()
 
 	// init the main controller of the game
 	s := ssclient.NewXLSpaceship(*fPlayerID, *fPlayerName, "localhost", *fPort)

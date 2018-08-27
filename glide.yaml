@@ -14,3 +14,7 @@ import:
 - package: golang.org/x/tools
   subpackages:
   - cover
+- package: github.com/manifoldco/promptui
+  version: ^0.3.1
+- package: github.com/chzyer/readline
+  version: 2972be24d48e78746da79ba8e24e8b488c9880de

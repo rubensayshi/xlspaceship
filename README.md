@@ -46,7 +46,7 @@ will generate binaries in `./bin/` for linux 64/386 and windows 64/386 with all 
 
 #### Run
 ```
-go run main.go
+go run main.go --playerId player-1234 --playerName "My Player Name" --port 8080
 ```
 
 if you want to run without building first.
