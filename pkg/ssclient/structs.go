@@ -74,6 +74,7 @@ type GameStatusResponse struct {
 type GameStatusResponsePlayer struct {
 	UserID string   `json:"user_id"`
 	Board  []string `json:"board"`
+	Shots  int      `json:"shots"`
 }
 
 func GameStatusResponseFromGame(s *XLSpaceship, game *ssgame.Game) *GameStatusResponse {
@@ -84,11 +85,13 @@ func GameStatusResponseFromGame(s *XLSpaceship, game *ssgame.Game) *GameStatusRe
 	res.Self = GameStatusResponsePlayer{
 		UserID: s.Player.PlayerID,
 		Board:  game.SelfBoard.ToPattern(),
+		Shots:  game.SelfBoard.CountShipsAlive(),
 	}
 
 	res.Opponent = GameStatusResponsePlayer{
 		UserID: game.Opponent.PlayerID,
 		Board:  game.OpponentBoard.ToPattern(),
+		Shots:  game.OpponentBoard.CountShipsAlive(),
 	}
 
 	if game.Status == ssgame.GameStatusDone {

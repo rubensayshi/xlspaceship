@@ -3,9 +3,6 @@ angular.module('xlspaceship')
         $scope.refreshing = false;
         $scope.game = $scope.games[$stateParams.gameID];
 
-        // assign a random salvo to our input state
-        $scope.salvo = randomSalvo();
-
         /**
          * generate a random shot
          */
@@ -19,14 +16,13 @@ angular.module('xlspaceship')
         /**
          * generate a fresh random salvo
          */
-        function randomSalvo() {
-            return {
-                shot1: randomShot(),
-                shot2: randomShot(),
-                shot3: randomShot(),
-                shot4: randomShot(),
-                shot5: randomShot(),
-            };
+        function randomSalvo(nShots) {
+            let salvo = [];
+            for (let i = 0; i < nShots; i++) {
+                salvo.push(randomShot());
+            }
+
+            return salvo;
         }
 
         /**
@@ -36,6 +32,7 @@ angular.module('xlspaceship')
             $scope.refreshing = true;
 
             return $scope.refreshGame($stateParams.gameID).then(function(game) {
+                $scope.games[game.game_id] = game;
                 $scope.game = game;
 
                 $timeout(function() {
@@ -51,17 +48,17 @@ angular.module('xlspaceship')
          */
         function fireSalvo() {
             $http.put("/xl-spaceship/user/game/" + $stateParams.gameID + "/fire", {
-                salvo: [$scope.salvo.shot1, $scope.salvo.shot2, $scope.salvo.shot3, $scope.salvo.shot4, $scope.salvo.shot5, ],
+                salvo: $scope.salvo,
             }, {headers: {'Content-Type': 'application/json'}}).catch(function(err) {
                 console.log(err);
                 alert(err.data || err);
             }).then(function(res) {
                 console.log(res.data);
 
-                // new random salvo for next round
-                $scope.salvo = randomSalvo();
-
-                return refresh();
+                return refresh().then(function() {
+                    // new random salvo for next round
+                    $scope.salvo = randomSalvo($scope.game.self.shots);
+                });
             });
         }
 
@@ -72,11 +69,17 @@ angular.module('xlspaceship')
         if (!$scope.game) {
             refresh()
                 .then(function(game) {
-                    $scope.games[game.game_id] = game;
+                    console.log('refreshed');
+
+                    // assign a random salvo to our input state
+                    $scope.salvo = randomSalvo($scope.game.self.shots);
                 }, function() {
                     $state.go('app.xlspaceship.welcome');
                 })
             ;
+        } else {
+            // assign a random salvo to our input state
+            $scope.salvo = randomSalvo($scope.game.self.shots);
         }
 
         // setup interval to fetch fresh data
