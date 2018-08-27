@@ -31,3 +31,5 @@ build-windows:
 build-linux:
 	 GOOS=linux GOARCH=amd64 go build -tags statik -o bin/xlspaceship-linux64 main.go
 	 GOOS=linux GOARCH=386 go build -tags statik -o bin/xlspaceship-linux386 main.go
+
+.PHONY: build
