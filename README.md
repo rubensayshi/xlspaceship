@@ -46,10 +46,14 @@ will generate binaries in `./bin/` for linux 64/386 and windows 64/386 with all 
 
 #### Run
 ```
-go run main.go --playerId player-1234 --playerName "My Player Name" --port 8080
+go run main.go --playerId player-1234 --playerName "Player 1" --port 8080
 ```
 
-if you want to run without building first.
+if you want to run without building first, ofcourse to play against "another player" you should run a 2nd instance on a different port as well;
+```
+go run main.go --playerId player-4321 --playerName "Player 2" --port 8090
+```
+
 
 #### Livereload for Go
 Get `gin` (https://github.com/codegangsta/gin) to make it easy to restart the process when you make code changes and run like:
